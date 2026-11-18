@@ -1,0 +1,18 @@
+{
+  "mejor_modelo": "SVM",
+  "filas": 1416,
+  "columnas": 17,
+  "valores_nulos": 0,
+  "filas_duplicadas": 0,
+  "coordenadas_duplicadas": 0,
+  "dn_min": 79,
+  "dn_max": 4674,
+  "pixeles_por_clase": {
+    "Vegetacion densa": 300,
+    "Vegetacion baja": 300,
+    "Agua": 108,
+    "Relave minero": 300,
+    "Suelo expuesto": 300,
+    "Urbano": 108
+  }
+}

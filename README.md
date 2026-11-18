@@ -8,7 +8,7 @@ El objetivo es comparar cinco modelos de *machine learning* para clasificar las 
 | Fase | Entrega | Estado |
 |---|---|---|
 | 1. Definición del problema | Evento, área de estudio, metadatos de la imagen y dataset (TSV) | ✅ Lista |
-| 2. Preprocesamiento y entrenamiento | Documentación del TSV y métricas iniciales: matriz de confusión y exactitud global | ⏳ Pendiente |
+| 2. Preprocesamiento y entrenamiento | Documentación del TSV y métricas iniciales: matriz de confusión y exactitud global | ✅ Lista |
 | 3. Síntesis y predicción | GeoTIFF temático, reporte técnico y código (ZIP) | ⏳ Pendiente |
 
 ---
@@ -132,14 +132,67 @@ run.bat src\02_figures.py
 | `src/01_extract_tsv.py` | Toma cada píxel cuyo centro cae dentro de un polígono, descarta los inválidos según la SCL, convierte las coordenadas a lat/lon y escribe el TSV | stack, SCL, polígonos | `data/training_dataset.tsv` |
 | `src/02_figures.py` | Mapas, firmas espectrales y tablas LaTeX del reporte | stack, SCL, polígonos, TSV, metadatos | `report/figures/`, `report/tables/` |
 
-Si cambian los polígonos, corran los dos scripts en ese orden y luego actualicen el reporte.
+Si cambian los polígonos, corran los scripts en orden (01 → 02 → 03 → 04) y luego actualicen los reportes.
 
-## 8. Reporte (LaTeX)
+### Fase 2: entorno de machine learning
 
-La carpeta [`report/`](report/) contiene `main.tex`, `references.bib`, las figuras y las tablas generadas.
+El Python de QGIS no trae scikit-learn, así que los modelos usan un entorno aparte (`.venv`). Se crea una sola vez, con Python 3.10 o superior:
 
-Para compilarlo en Overleaf:
-1. Comprime la carpeta `report/`.
+```bat
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+```
+
+Después, desde la carpeta del repositorio:
+
+```bat
+run_ml.bat src\03_train_models.py
+run.bat    src\04_phase2_figures.py
+```
+
+`run_ml.bat` usa el entorno `.venv` y `run.bat` usa el Python de QGIS. El script 04 necesita GDAL y geopandas para el mapa.
+
+| Script | Qué hace | Salidas |
+|---|---|---|
+| `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42), estandariza las bandas, entrena LR, DT, RF, SVM, ANN y KNN, y calcula la matriz de confusión, OA, Kappa, precisión, recall, F1 y una validación cruzada agrupada por polígono | `results/` |
+| `src/04_phase2_figures.py` | Matrices de confusión, gráfica de métricas, importancia de bandas, mapa de la división y tablas LaTeX | `report_fase2/figures/`, `report_fase2/tables/` |
+
+Archivos en `results/`:
+
+| Archivo | Contenido |
+|---|---|
+| `split.csv` | Cada polígono y si quedó en entrenamiento o prueba |
+| `metrics_summary.csv` | Una fila por modelo: OA, Kappa, métricas macro, validación cruzada y parámetros |
+| `confusion_<modelo>.csv` | Matriz de confusión (filas: clase real; columnas: predicha) |
+| `per_class_<modelo>.csv` | Precisión, recall y F1 por clase |
+| `feature_importance.csv` | Importancia de las bandas en DT y RF |
+| `tsv_quality.json` | Control de calidad del TSV |
+
+### Resultados iniciales (Fase 2)
+
+Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles):
+
+| Modelo | OA | Kappa | F1 macro | OA validación cruzada |
+|---|---|---|---|---|
+| LR (línea base) | 0,883 | 0,857 | 0,868 | 0,891 ± 0,062 |
+| DT | 0,788 | 0,741 | 0,792 | 0,803 ± 0,066 |
+| RF (bonus) | 0,835 | 0,797 | 0,827 | 0,873 ± 0,047 |
+| **SVM** | **0,894** | **0,870** | **0,883** | 0,906 ± 0,054 |
+| ANN | 0,871 | 0,841 | 0,878 | **0,916 ± 0,052** |
+| KNN | 0,828 | 0,789 | 0,828 | 0,888 ± 0,060 |
+
+Vegetación y agua se clasifican sin errores. La confusión está entre suelo expuesto, relave y urbano: los polígonos de prueba `5_03` y `5_11` se clasifican completos como urbano y como relave, respectivamente.
+
+## 8. Reportes (LaTeX)
+
+- [`report/`](report/): documento de la Fase 1.
+- [`report_fase2/`](report_fase2/): documento de la Fase 2.
+- [`report_completo/`](report_completo/): documento único con las Fases 1 y 2 (copia de las figuras y tablas de ambas carpetas; si se regeneran, hay que copiarlas de nuevo).
+
+Cada carpeta contiene `main.tex`, `references.bib`, las figuras y las tablas generadas.
+
+Para compilar cualquiera de los dos en Overleaf:
+1. Comprime la carpeta del reporte.
 2. Ve a **New Project → Upload Project** y sube el ZIP.
 3. Compila con pdfLaTeX. Overleaf corre biber automáticamente.
 
@@ -149,6 +202,8 @@ Para compilarlo en Overleaf:
 .
 ├── README.md
 ├── run.bat                        # ejecuta scripts con el Python de QGIS
+├── run_ml.bat                     # ejecuta scripts con el entorno .venv (scikit-learn)
+├── requirements.txt               # dependencias del entorno de machine learning
 ├── data/
 │   ├── raw/
 │   │   ├── S2_20190201_stack.tif  # imagen de 12 bandas, 10 m, EPSG:32723
@@ -163,24 +218,20 @@ Para compilarlo en Overleaf:
 ├── src/
 │   ├── common.py
 │   ├── 01_extract_tsv.py
-│   └── 02_figures.py
-└── report/
-    ├── main.tex
-    ├── references.bib
-    ├── figures/
-    └── tables/
+│   ├── 02_figures.py
+│   ├── 03_train_models.py         # Fase 2: entrenamiento y métricas
+│   └── 04_phase2_figures.py       # Fase 2: figuras y tablas
+├── results/                       # métricas y matrices de confusión (CSV)
+├── report/                        # reporte de la Fase 1
+├── report_fase2/                  # reporte de la Fase 2
+└── report_completo/               # reporte unificado (Fases 1 y 2)
 ```
 
 ## 10. Próximos pasos
 
-- **Fase 2:**
-  - instalar scikit-learn (por ejemplo, en un entorno de Python aparte o en Google Colab);
-  - separar entrenamiento y prueba por polígono;
-  - estandarizar las bandas;
-  - entrenar los 5 modelos;
-  - reportar la matriz de confusión y la exactitud global.
 - **Fase 3:**
-  - optimizar los hiperparámetros;
+  - revisar en QGIS los polígonos de suelo expuesto `5_03` y `5_11`;
+  - optimizar los hiperparámetros con validación cruzada agrupada por polígono;
   - comparar los modelos con Kappa, precisión, recall y F1;
   - aplicar el mejor modelo a `S2_20190201_stack.tif` y exportar el GeoTIFF temático conservando el CRS y el *transform*;
   - simbolizarlo en QGIS y calcular el área por clase.

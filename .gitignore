@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.pyc
+.venv/
 
 # Archivos auxiliares de GDAL/QGIS
 *.aux.xml
@@ -8,14 +9,17 @@ __pycache__/
 *.qgs~
 
 # LaTeX
-report/*.aux
-report/*.log
-report/*.bbl
-report/*.bcf
-report/*.blg
-report/*.run.xml
-report/*.out
-report/*.toc
-report/*.synctex.gz
-report/*.fdb_latexmk
-report/*.fls
+report*/*.aux
+report*/*.log
+report*/*.bbl
+report*/*.bcf
+report*/*.blg
+report*/*.run.xml
+report*/*.out
+report*/*.toc
+report*/*.synctex.gz
+report*/*.fdb_latexmk
+report*/*.fls
+
+# ZIP para Overleaf (se regenera)
+report*_overleaf.zip

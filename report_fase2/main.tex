@@ -1,0 +1,177 @@
+\documentclass{article}
+
+% Paquetes (estilo base de la plantilla de Overleaf)
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noquoting,es-nodecimaldot]{babel}
+\usepackage{csquotes}
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[backend=biber, style=authoryear]{biblatex}
+\addbibresource{references.bib}
+
+\title{Clasificación supervisada de coberturas tras el colapso de la presa de Brumadinho (Minas Gerais, Brasil) con Sentinel-2\\[0.5em]
+\large Proyecto final -- Fase 2: preprocesamiento y entrenamiento}
+\author{Jose Villarroel\\Pontificia Universidad Javeriana}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento presenta la segunda fase del análisis comparativo de arquitecturas de aprendizaje automático para clasificar coberturas en Brumadinho (Brasil) con una escena Sentinel-2 del 1 de febrero de 2019. Primero se documenta el archivo TSV de entrenamiento: 1416 píxeles, doce bandas y seis clases. Luego se describe su preprocesamiento y se entrenan cinco modelos con parámetros iniciales: regresión logística, árbol de decisión (con Random Forest como complemento), máquina de soporte vectorial, red neuronal y K vecinos más cercanos. Los modelos se evalúan sobre polígonos que no participan en el entrenamiento. La máquina de soporte vectorial obtiene el mejor resultado inicial, con una exactitud global de 89{,}4\,\% y un Kappa de 0{,}870. Los errores se concentran en la clase suelo expuesto, que se confunde con el relave minero y con la zona urbana.
+\end{abstract}
+
+\section{Introducción}
+En la Fase~1 se definieron el evento de estudio, el área de estudio y la imagen satelital, y se construyó el conjunto de datos de entrenamiento \texttt{training\_dataset.tsv}. Esta segunda fase tiene dos objetivos, según el enunciado del proyecto:
+\begin{enumerate}
+ \item documentar el archivo TSV de entrenamiento exportado;
+ \item entrenar los modelos y reportar sus métricas iniciales de evaluación, como mínimo la matriz de confusión y la exactitud global.
+\end{enumerate}
+Los modelos se implementaron en Python con scikit-learn \parencite{Pedregosa2011}. La optimización de hiperparámetros, la comparación formal entre arquitecturas y la predicción sobre la imagen completa corresponden a la Fase~3.
+
+\section{Documentación del archivo TSV}
+
+\subsection{Estructura y contenido}
+El archivo \texttt{training\_dataset.tsv} es una tabla de texto separada por tabulaciones con 1416 filas y 17 columnas. Cada fila corresponde a un píxel de 10\,m ubicado dentro de un polígono de entrenamiento, y sus columnas son:
+\begin{itemize}
+ \item \texttt{Latitude} y \texttt{Longitude}: coordenadas del centro del píxel en WGS84;
+ \item \texttt{B01} a \texttt{B12}: los valores de las doce bandas de Sentinel-2 L2A, como reflectancia de superficie multiplicada por 10\,000;
+ \item \texttt{class\_id} y \texttt{class\_name}: el código (1--6) y el nombre de la clase;
+ \item \texttt{poly\_id}: el identificador del polígono de origen.
+\end{itemize}
+La Tabla~\ref{tab:conteo} resume el número de polígonos y de píxeles por clase.
+
+\input{tables/conteo_clases.tex}
+
+\subsection{Control de calidad}
+Antes de entrenar se verificó la integridad del archivo:
+\begin{itemize}
+ \item no hay valores nulos;
+ \item no hay filas duplicadas ni píxeles con coordenadas repetidas;
+ \item todos los valores espectrales están entre 79 y 4674 (reflectancia entre 0{,}008 y 0{,}467), un rango físicamente plausible;
+ \item no hay píxeles marcados como nube, sombra o sin datos según la banda SCL, porque se descartaron al construir el archivo.
+\end{itemize}
+
+\subsection{Estadística descriptiva}
+La Tabla~\ref{tab:estadistica} presenta la media y la desviación estándar de cada banda por clase, y la Figura~\ref{fig:firmas} las representa como firmas espectrales. La vegetación densa y la baja se distinguen por su nivel en el infrarrojo cercano (B08, B8A) y en el SWIR (B11, B12). El agua es la única clase con reflectancia muy baja en el infrarrojo. Las clases urbano y suelo expuesto tienen las firmas más parecidas y las desviaciones más grandes, lo que anticipa confusiones entre ellas.
+
+\input{tables/estadistica_tsv.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.85\textwidth]{figures/firmas_espectrales}
+ \caption{Firma espectral media ($\pm 1\sigma$) de cada clase en el conjunto de entrenamiento.}
+ \label{fig:firmas}
+\end{figure}
+
+\subsection{Preprocesamiento}
+Sobre el TSV se aplicaron dos transformaciones antes de entrenar:
+\begin{enumerate}
+ \item \textbf{Conversión a reflectancia:} los valores de las bandas se dividieron entre 10\,000.
+ \item \textbf{Estandarización:} cada banda se transformó a media 0 y desviación estándar 1 con \texttt{StandardScaler}. Esto es necesario para los modelos sensibles a la escala, como la regresión logística, la SVM, la red neuronal y KNN. El estandarizador se ajustó únicamente con los datos de entrenamiento y se aplicó después a los de prueba, para no filtrar información del conjunto de prueba.
+\end{enumerate}
+No se eliminaron valores atípicos, porque los polígonos ya se seleccionaron sobre zonas homogéneas.
+
+\section{Metodología}
+
+\subsection{División en entrenamiento y prueba}
+Los píxeles de un mismo polígono son vecinos y casi idénticos entre sí. Si se repartieran al azar entre entrenamiento y prueba, el modelo se evaluaría con píxeles prácticamente iguales a los que ya vio y las métricas quedarían infladas \parencite{Roberts2017}. Por eso la división se hizo \textbf{por polígono}: en cada clase se eligieron al azar 8 de los 12 polígonos para entrenamiento y 4 para prueba, con una semilla fija (42) para que el resultado sea reproducible (Tabla~\ref{tab:division} y Figura~\ref{fig:division}). Ningún polígono aparece en ambos conjuntos.
+
+\input{tables/division.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=\textwidth]{figures/division_poligonos}
+ \caption{Polígonos de entrenamiento (círculos) y de prueba (cuadrados) sobre la imagen en color verdadero.}
+ \label{fig:division}
+\end{figure}
+
+Como complemento, se estimó la exactitud global con una validación cruzada de 4 pliegues agrupada por polígono y estratificada por clase (\texttt{StratifiedGroupKFold}) sobre los 72 polígonos. Así se comprueba que el resultado no depende de una única división.
+
+\subsection{Modelos}
+Se entrenaron los cinco modelos que pide el enunciado, más un Random Forest como complemento del árbol de decisión. La Tabla~\ref{tab:modelos} resume su configuración inicial. En los modelos que lo permiten se usaron pesos por clase (\texttt{class\_weight=balanced}) para compensar el menor número de píxeles de agua y urbano. Para el quinto modelo se eligió KNN, por ser un método no paramétrico que trabaja directamente en el espacio espectral.
+
+\input{tables/modelos.tex}
+
+\subsection{Métricas}
+Para cada modelo se calculó la matriz de confusión sobre el conjunto de prueba. Sus filas son la clase real y sus columnas la clase predicha. A partir de ella se obtienen:
+\begin{itemize}
+ \item la \textbf{exactitud global} (OA), la proporción de píxeles bien clasificados:
+ \begin{equation}
+  \mathrm{OA} = \frac{\sum_{i} n_{ii}}{N};
+ \end{equation}
+ \item el \textbf{coeficiente Kappa} \parencite{Cohen1960}, que mide el acuerdo más allá del esperado por azar:
+ \begin{equation}
+  \kappa = \frac{p_o - p_e}{1 - p_e}, \qquad p_e = \sum_{i} \frac{n_{i+}\, n_{+i}}{N^2},
+ \end{equation}
+ donde $p_o$ es la OA, y $n_{i+}$ y $n_{+i}$ son los totales de la fila y de la columna $i$;
+ \item la \textbf{precisión}, el \textbf{recall} y el \textbf{F1} de cada clase, y su promedio macro.
+\end{itemize}
+La matriz de confusión y la OA son las métricas mínimas de esta fase. Kappa, precisión, recall y F1 se adelantan porque se usarán en la comparación de la Fase~3.
+
+\section{Resultados}
+
+\subsection{Comparación inicial de los modelos}
+La Tabla~\ref{tab:metricas} y la Figura~\ref{fig:metricas} resumen las métricas de los seis modelos. La SVM obtiene la mayor exactitud global sobre el conjunto de prueba (89{,}4\,\%) y el mayor Kappa (0{,}870), seguida de la regresión logística y de la red neuronal. En la validación cruzada, la red neuronal tiene la exactitud media más alta (91{,}6\,\%), aunque la diferencia con la SVM (90{,}6\,\%) es menor que la variabilidad entre pliegues. El árbol de decisión individual es el modelo más débil, y el Random Forest lo mejora en unos cinco puntos.
+
+\input{tables/metricas_resumen.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.85\textwidth]{figures/metricas_modelos}
+ \caption{Exactitud global y Kappa sobre el conjunto de prueba, y exactitud global media ($\pm 1\sigma$) de la validación cruzada.}
+ \label{fig:metricas}
+\end{figure}
+
+\subsection{Matrices de confusión}
+La Figura~\ref{fig:matrices} presenta las matrices de confusión de los seis modelos. En todos ellos la vegetación densa, la vegetación baja y el agua se clasifican sin errores. Los errores se concentran en tres clases: suelo expuesto, relave minero y urbano.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=\textwidth]{figures/matrices_confusion}
+ \caption{Matrices de confusión sobre el conjunto de prueba. Los números son píxeles; el color indica la proporción respecto al total de la clase real.}
+ \label{fig:matrices}
+\end{figure}
+
+La Tabla~\ref{tab:matriz_mejor} muestra la matriz de la SVM con las exactitudes del productor y del usuario, y la Tabla~\ref{tab:por_clase} sus métricas por clase. La SVM reconoce todos los píxeles de relave y de urbano (recall de 1), pero la mitad de los píxeles de suelo expuesto se asignan a esas dos clases: 25 a relave y 25 a urbano. Como cada polígono de suelo expuesto tiene 25 píxeles, el error corresponde a dos polígonos completos: el \texttt{5\_11} se clasificó entero como relave y el \texttt{5\_03} entero como urbano. Por eso la precisión del relave (0{,}80) y del urbano (0{,}59) es menor.
+
+\input{tables/matriz_mejor.tex}
+
+\input{tables/por_clase_mejor.tex}
+
+\subsection{Importancia de las bandas}
+La Figura~\ref{fig:importancia} muestra la importancia de cada banda según el árbol de decisión y el Random Forest. El árbol individual basa sus decisiones sobre todo en el azul (B02), el rojo (B04) y el infrarrojo cercano (B08 y B8A), que son las bandas que separan la vegetación del resto. El Random Forest reparte la importancia entre más bandas y da un peso mayor al SWIR (B12) y al aerosol costero (B01). Esas bandas ayudan a separar el relave, el suelo y la zona urbana.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.85\textwidth]{figures/importancia_bandas}
+ \caption{Importancia de las bandas (reducción media de la impureza de Gini) en el árbol de decisión y el Random Forest.}
+ \label{fig:importancia}
+\end{figure}
+
+\section{Discusión}
+Los resultados iniciales indican que las doce bandas de Sentinel-2 permiten separar con mucha exactitud las coberturas vegetales y el agua, cuyas firmas espectrales son muy distintas. La dificultad está en las coberturas minerales y construidas: suelo expuesto, relave y urbano. Sus firmas tienen niveles parecidos en el visible y en el SWIR, y los modelos las confunden aunque se usen pesos por clase.
+
+Que los errores aparezcan como polígonos completos, y no como píxeles dispersos, sugiere dos explicaciones. La primera es que algunos polígonos de suelo expuesto pueden cubrir materiales parecidos al relave, como pilas de mineral de hierro de la mina, o a la zona urbana, como lotes sin construir. La segunda es que el número de polígonos por clase es bajo: con solo 8 polígonos de entrenamiento, una superficie poco representada en ellos no se aprende. La validación cruzada respalda esta lectura, porque su desviación entre pliegues (5 a 7 puntos de exactitud) muestra que el resultado depende de qué polígonos queden en cada conjunto.
+
+Los modelos que trazan fronteras más flexibles en el espacio espectral (la SVM con kernel RBF y la red neuronal) obtienen los mejores resultados. Aun así, la regresión logística, el modelo base, queda muy cerca, lo que indica que la mayor parte de las clases son casi linealmente separables.
+
+\section{Próximos pasos}
+En la Fase~3 se realizarán las siguientes tareas:
+\begin{itemize}
+ \item optimizar los hiperparámetros de cada modelo, por ejemplo $C$ y $\gamma$ en la SVM, la arquitectura de la red neuronal, $k$ en KNN y la profundidad del árbol, mediante búsqueda en malla con validación cruzada agrupada por polígono;
+ \item revisar en QGIS los polígonos de suelo expuesto mal clasificados (\texttt{5\_03} y \texttt{5\_11}) y, si es necesario, ajustarlos o añadir polígonos de las clases minerales y urbana;
+ \item comparar los modelos optimizados con Kappa, precisión, recall y F1, y seleccionar el mejor;
+ \item aplicar el modelo seleccionado a toda la imagen para obtener el GeoTIFF temático, simbolizarlo en QGIS y calcular el área de cada clase.
+\end{itemize}
+
+\printbibliography
+
+\end{document}

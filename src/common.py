@@ -7,6 +7,11 @@ RAW = DATA / "raw"
 FIG = ROOT / "report" / "figures"
 TAB = ROOT / "report" / "tables"
 
+# Fase 2
+RESULTS = ROOT / "results"
+FIG2 = ROOT / "report_fase2" / "figures"
+TAB2 = ROOT / "report_fase2" / "tables"
+
 # Área de estudio (WGS84): lon_min, lat_min, lon_max, lat_max
 AOI_BBOX = (-44.224111, -20.159193, -44.096943, -20.108763)
 TARGET_EPSG = 32723  # WGS 84 / UTM zona 23S

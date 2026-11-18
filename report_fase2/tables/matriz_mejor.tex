@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+ \centering
+ \small
+\setlength{\tabcolsep}{3.5pt}
+ \caption{Matriz de confusión del mejor modelo inicial (Máquina de soporte vectorial). Filas: clase real; columnas: clase predicha; EP: exactitud del productor; EU: exactitud del usuario.}
+ \label{tab:matriz_mejor}
+ \begin{tabular}{lrrrrrrrr}
+  \toprule
+  Real / Predicha & Veg. densa & Veg. baja & Agua & Relave & Suelo exp. & Urbano & Total & EP (\%) \\
+  \midrule
+  Veg. densa & 100 & 0 & 0 & 0 & 0 & 0 & 100 & 100{,}0 \\
+  Veg. baja & 0 & 100 & 0 & 0 & 0 & 0 & 100 & 100{,}0 \\
+  Agua & 0 & 0 & 36 & 0 & 0 & 0 & 36 & 100{,}0 \\
+  Relave & 0 & 0 & 0 & 100 & 0 & 0 & 100 & 100{,}0 \\
+  Suelo exp. & 0 & 0 & 0 & 25 & 50 & 25 & 100 & 50{,}0 \\
+  Urbano & 0 & 0 & 0 & 0 & 0 & 36 & 36 & 100{,}0 \\
+  \midrule
+  Total & 100 & 100 & 36 & 125 & 50 & 61 & 472 & \\
+  EU (\%) & 100{,}0 & 100{,}0 & 100{,}0 & 80{,}0 & 100{,}0 & 59{,}0 & & \\
+  \bottomrule
+ \end{tabular}
+\end{table}

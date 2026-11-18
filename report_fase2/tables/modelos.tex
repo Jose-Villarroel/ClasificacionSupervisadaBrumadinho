@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+ \centering
+ \small
+ \caption{Modelos y configuración inicial (scikit-learn). En todos, las bandas se estandarizan con \texttt{StandardScaler} ajustado solo con el entrenamiento.}
+ \label{tab:modelos}
+ \begin{tabularx}{\textwidth}{llX}
+  \toprule
+   & Modelo & Configuración inicial \\
+  \midrule
+  LR & Regresión logística & \texttt{max\_iter=1000}, \texttt{class\_weight=balanced} \\
+  DT & Árbol de decisión & Sin límite de profundidad, criterio Gini, \texttt{class\_weight=balanced} \\
+  RF & Random Forest & 300 árboles, \texttt{class\_weight=balanced} \\
+  SVM & Máquina de soporte vectorial & Kernel RBF, $C=1$, $\gamma$ = \texttt{scale}, \texttt{class\_weight=balanced} \\
+  ANN & Red neuronal (MLP) & Dos capas ocultas (64 y 32 neuronas), ReLU, Adam, \texttt{max\_iter=2000} \\
+  KNN & K vecinos más cercanos & $k=5$, distancia euclidiana, voto uniforme \\
+  \bottomrule
+ \end{tabularx}
+\end{table}
