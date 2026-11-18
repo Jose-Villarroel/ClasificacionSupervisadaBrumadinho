@@ -1,0 +1,71 @@
+{
+  "scene_id": "S2A_MSIL2A_20190201T131241_R138_T23KNT_20201007T130407",
+  "product_uri": "S2A_MSIL2A_20190201T131241_N0212_R138_T23KNT_20201007T130407.SAFE",
+  "platform": "Sentinel-2A",
+  "instrument": [
+    "msi"
+  ],
+  "processing_level": "L2A (Sen2Cor, reflectancia BOA)",
+  "processing_baseline": "02.12",
+  "datetime_utc": "2019-02-01T13:12:41.024000Z",
+  "mgrs_tile": "23KNT",
+  "relative_orbit": 138,
+  "orbit_state": "descending",
+  "datatake_id": "GS2A_20190201T131241_018868_N02.12",
+  "scene_cloud_cover_pct": 1.137083,
+  "sun_azimuth": 87.7785871019417,
+  "sun_zenith": 27.0666586490616,
+  "aoi_invalid_scl_pct": 0.1133,
+  "scl_histogram": {
+    "2": 8296,
+    "3": 456,
+    "4": 647932,
+    "5": 101388,
+    "6": 1344,
+    "7": 2836,
+    "8": 204,
+    "9": 124,
+    "10": 80
+  },
+  "crs": "EPSG:32723",
+  "pixel_size_m": 10.0,
+  "geotransform": [
+    581040.0,
+    10.0,
+    0.0,
+    7776300.0,
+    0.0,
+    -10.0
+  ],
+  "width": 1338,
+  "height": 570,
+  "bounds_utm": [
+    581040.0,
+    7770600.0,
+    594420.0,
+    7776300.0
+  ],
+  "aoi_bbox_wgs84": [
+    -44.224111,
+    -20.159193,
+    -44.096943,
+    -20.108763
+  ],
+  "aoi_area_km2": 74.188,
+  "bands": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B11",
+    "B12"
+  ],
+  "source": "Microsoft Planetary Computer STAC, coleccion sentinel-2-l2a",
+  "downloaded": "2026-11-12T15:17:18"
+}

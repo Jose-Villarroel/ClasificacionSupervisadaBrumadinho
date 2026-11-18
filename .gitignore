@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Archivos auxiliares de GDAL/QGIS
+*.aux.xml
+*.qgz~
+*.qgs~
+
+# LaTeX
+report/*.aux
+report/*.log
+report/*.bbl
+report/*.bcf
+report/*.blg
+report/*.run.xml
+report/*.out
+report/*.toc
+report/*.synctex.gz
+report/*.fdb_latexmk
+report/*.fls
