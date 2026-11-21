@@ -16,7 +16,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 from common import (BAND_INFO, BANDS, CLASS_COLORS, CLASS_LABELS as CLASSES, FIG, METADATA,
-                    POLYGONS, ROI, SCL, SCL_INVALID, STACK,
+                    POLYGONS, POLY_TSV, ROI, SCL, SCL_INVALID, STACK,
                     STUDY_AREA, TAB, TARGET_EPSG, TSV)
 
 plt.rcParams.update({"font.size": 9, "savefig.bbox": "tight", "savefig.dpi": 150})
@@ -148,20 +148,23 @@ def main():
                            for k, v in CLASSES.items()], fontsize=7, loc="upper right")
     fig.savefig(FIG / "poligonos_zoom.jpg", pil_kwargs={"quality": 85}); plt.close(fig)
 
-    # 5. Firmas espectrales medias por clase
+    # 5. Firmas espectrales por polígono (mediana e IQR entre polígonos)
     df = pd.read_csv(TSV, sep="\t")
+    poly = pd.read_csv(POLY_TSV, sep="\t")
     wl = np.arange(len(BANDS))
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    for cid, g in df.groupby("class_id"):
-        m = g[BANDS].mean() / 10000; s = g[BANDS].std() / 10000
+    for cid, g in poly.groupby("class_id"):
+        m = g[BANDS].median() / 10000
+        q1 = g[BANDS].quantile(0.25) / 10000
+        q3 = g[BANDS].quantile(0.75) / 10000
         ax.plot(wl, m, "-o", ms=3, color=CLASS_COLORS[cid], label=CLASSES[cid])
-        ax.fill_between(wl, m - s, m + s, color=CLASS_COLORS[cid], alpha=0.15)
+        ax.fill_between(wl, q1, q3, color=CLASS_COLORS[cid], alpha=0.15)
     ax.set_xticks(wl)
     ax.set_xticklabels([f"{b}\n{BAND_INFO[b][1]}" for b in BANDS], fontsize=7)
     ax.set_xlabel("Banda y longitud de onda central (nm)")
     ax.set_ylabel("Reflectancia de superficie")
     ax.grid(alpha=0.3); ax.legend(fontsize=7, ncol=2)
-    ax.set_title("Firma espectral media (±1σ) por clase")
+    ax.set_title("Firma espectral por polígono (mediana ± IQR entre polígonos)")
     fig.savefig(FIG / "firmas_espectrales.png"); plt.close(fig)
 
     # ---- Tablas LaTeX ----

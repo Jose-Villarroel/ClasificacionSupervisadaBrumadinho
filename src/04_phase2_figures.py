@@ -1,11 +1,12 @@
-﻿"""Fase 2 - Figuras y tablas LaTeX a partir de results/ (salida de 03_train_models.py).
+﻿"""Fase 2 - Figuras y tablas LaTeX a partir de results/.
 
-Usa el Python de QGIS porque el mapa de la división necesita GDAL y geopandas.
+Incluye la vista oficial por píxel y la comparación por polígono de las
+pistas A (votación de píxeles) y B (medianas por polígono).
+
 Uso:  run.bat src\\04_phase2_figures.py
 """
 import importlib
 import json
-import re
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ import pandas as pd
 import rasterio
 from matplotlib.patches import Patch
 
-from common import (BAND_INFO, BANDS, CLASS_COLORS, CLASS_LABELS, CLASSES, FIG2,
+from common import (BAND_INFO, BANDS, CLASS_COLORS, CLASS_LABELS, FIG2,
                     POLYGONS, RESULTS, ROI, STACK, TAB2, TARGET_EPSG, TSV)
 
 f1 = importlib.import_module("02_figures")       # reutiliza estilo y utilidades de la Fase 1
@@ -42,11 +43,21 @@ def load():
     per = {m: pd.read_csv(RESULTS / f"per_class_{m}.csv") for m in ORDER}
     split = pd.read_csv(RESULTS / "split.csv")
     imp = pd.read_csv(RESULTS / "feature_importance.csv", index_col=0)
-    return summ, cms, per, split, imp
+    return {
+        "summ": summ, "cms": cms, "per": per, "split": split, "imp": imp,
+        "mpoly": pd.read_csv(RESULTS / "metrics_polygon.csv").set_index("model").loc[ORDER],
+        "mtrain": pd.read_csv(RESULTS / "metrics_polytrain.csv").set_index("model").loc[ORDER],
+        "comp": pd.read_csv(RESULTS / "pixel_vs_polygon.csv").set_index("model").loc[ORDER],
+        "boot": pd.read_csv(RESULTS / "bootstrap_ci.csv"),
+        "icc": pd.read_csv(RESULTS / "icc.csv"),
+        "cms_poly": {m: pd.read_csv(RESULTS / f"confusion_polytrain_{m}.csv", index_col=0)
+                     for m in ORDER},
+        "imp_poly": pd.read_csv(RESULTS / "feature_importance_polytrain.csv", index_col=0),
+    }
 
 
-def best_model(summ):
-    return summ.sort_values(["kappa", "f1_macro"], ascending=False).index[0]
+def best_by(df, metric="kappa"):
+    return df.sort_values([metric, "f1_macro"], ascending=False, kind="mergesort").index[0]
 
 
 def fig_confusion(summ, cms):
@@ -73,15 +84,15 @@ def fig_confusion(summ, cms):
 def fig_metrics(summ):
     x = np.arange(len(ORDER)); w = 0.38
     fig, ax = plt.subplots(figsize=(8, 3.8))
-    ax.bar(x - w / 2, summ["oa"], w, label="OA (prueba)", color="#2166ac")
-    ax.bar(x + w / 2, summ["kappa"], w, label="Kappa (prueba)", color="#92c5de")
+    ax.bar(x - w / 2, summ["oa"], w, label="OA prueba (píxel)", color="#2166ac")
+    ax.bar(x + w / 2, summ["kappa"], w, label="Kappa prueba (píxel)", color="#92c5de")
     ax.errorbar(x - w / 2, summ["cv_oa_mean"], yerr=summ["cv_oa_std"], fmt="o", color="black",
-                ms=4, capsize=3, label="OA validación cruzada (media ± σ)")
+                ms=4, capsize=3, label="OA LOO (out-of-fold) ± ee")
     ax.set_xticks(x); ax.set_xticklabels(ORDER)
     lo = max(0, min(summ["kappa"].min(), (summ["cv_oa_mean"] - summ["cv_oa_std"]).min()) - 0.05)
     ax.set_ylim(lo, 1.0); ax.set_ylabel("Valor"); ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3, frameon=False)
-    ax.set_title("Exactitud global y Kappa por modelo")
+    ax.set_title("Exactitud global y Kappa por modelo (píxel)")
     fig.savefig(FIG2 / "metricas_modelos.png"); plt.close(fig)
 
 
@@ -95,8 +106,20 @@ def fig_importance(imp):
     ax.set_xlabel("Banda y longitud de onda central (nm)")
     ax.set_ylabel("Importancia (reducción de impureza)")
     ax.grid(axis="y", alpha=0.3); ax.legend(fontsize=8)
-    ax.set_title("Importancia de las bandas")
+    ax.set_title("Importancia de las bandas (pista A)")
     fig.savefig(FIG2 / "importancia_bandas.png"); plt.close(fig)
+
+
+def fig_importance_polygon(imp):
+    x = np.arange(len(imp)); w = 0.38
+    fig, ax = plt.subplots(figsize=(9, 3.8))
+    ax.bar(x - w / 2, imp["DT"], w, label="Árbol de decisión", color="#8c510a")
+    ax.bar(x + w / 2, imp["RF"], w, label="Random Forest", color="#1b7837")
+    ax.set_xticks(x); ax.set_xticklabels(imp.index, rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("Importancia (reducción de impureza)")
+    ax.grid(axis="y", alpha=0.3); ax.legend(fontsize=8)
+    ax.set_title("Importancia de bandas e índices (pista B)")
+    fig.tight_layout(); fig.savefig(FIG2 / "importancia_bandas_poligono.png"); plt.close(fig)
 
 
 def fig_split_map(split):
@@ -115,17 +138,102 @@ def fig_split_map(split):
         ax.scatter(c.x, c.y, s=40 if s == "prueba" else 26, color=CLASS_COLORS[cid],
                    marker="s" if s == "prueba" else "o",
                    edgecolor="black" if s == "prueba" else "white", lw=1.0, zorder=3)
+    n_train = per_class_count(split, "entrenamiento")
+    n_test = per_class_count(split, "prueba")
     hs = [Patch(fc=CLASS_COLORS[k], ec="white", label=v) for k, v in CLASS_LABELS.items()]
-    hs += [plt.Line2D([], [], marker="o", ls="", mfc="grey", mec="white", label="Entrenamiento (8 por clase)"),
-           plt.Line2D([], [], marker="s", ls="", mfc="grey", mec="black", label="Prueba (4 por clase)")]
+    hs += [plt.Line2D([], [], marker="o", ls="", mfc="grey", mec="white",
+                      label=f"Entrenamiento ({n_train} por clase)"),
+           plt.Line2D([], [], marker="s", ls="", mfc="grey", mec="black",
+                      label=f"Prueba ({n_test} por clase)")]
     ax.legend(handles=hs, loc="upper left", fontsize=7, ncol=2, framealpha=0.85)
     ax.set_title("División de los polígonos en entrenamiento y prueba")
     km_axes(ax); scalebar(ax, ext)
     fig.savefig(FIG2 / "division_poligonos.jpg", pil_kwargs={"quality": 85}); plt.close(fig)
 
 
-def tables(summ, cms, per, split, best):
-    # 1. Resumen de métricas, mejor valor en negrita
+def per_class_count(split, kind):
+    counts = split[split["set"] == kind].groupby("class_id").size()
+    return int(counts.iloc[0]) if counts.nunique() == 1 else f"{int(counts.min())}-{int(counts.max())}"
+
+
+def fig_confusion_polygon(mtrain, cms):
+    fig, axs = plt.subplots(2, 3, figsize=(12, 8.2))
+    for ax, m in zip(axs.flat, ORDER):
+        cm = cms[m].to_numpy()
+        norm = cm / cm.sum(1, keepdims=True)
+        ax.imshow(norm, cmap="Greens", vmin=0, vmax=1)
+        for i in range(6):
+            for j in range(6):
+                if cm[i, j]:
+                    ax.text(j, i, str(cm[i, j]), ha="center", va="center", fontsize=8,
+                            color="white" if norm[i, j] > 0.55 else "black")
+        lab = [SHORT[k] for k in range(1, 7)]
+        ax.set_xticks(range(6)); ax.set_xticklabels(lab, rotation=45, ha="right", fontsize=7)
+        ax.set_yticks(range(6)); ax.set_yticklabels(lab, fontsize=7)
+        ax.set_title(f"{m}: OA = {mtrain.loc[m, 'oa'] * 100:.1f} %, κ = {mtrain.loc[m, 'kappa']:.3f}",
+                     fontsize=9)
+        ax.set_xlabel("Clase predicha", fontsize=8); ax.set_ylabel("Clase real", fontsize=8)
+    fig.suptitle("Matrices de confusión por polígono (pista B: medianas)", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(FIG2 / "matrices_confusion_poligono.png"); plt.close(fig)
+
+
+def ci_half(boot, track, metric, model):
+    row = boot[(boot["track"] == track) & (boot["metric"] == metric) & (boot["model"] == model)]
+    return 0.0 if row.empty else float((row["ci_high"].iloc[0] - row["ci_low"].iloc[0]) / 2)
+
+
+def fig_metrics_polygon(mpoly, mtrain, boot):
+    x = np.arange(len(ORDER)); w = 0.38
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4.0))
+    for ax, metric, label in [(axs[0], "oa", "OA"), (axs[1], "kappa", "Kappa")]:
+        ax.bar(x - w / 2, mpoly[metric], w,
+               yerr=[ci_half(boot, "polygon_A", metric, m) for m in ORDER],
+               capsize=2, label="A: votación de píxeles", color="#2166ac")
+        ax.bar(x + w / 2, mtrain[metric], w,
+               yerr=[ci_half(boot, "polygon_B", metric, m) for m in ORDER],
+               capsize=2, label="B: medianas por polígono", color="#1b7837")
+        ax.set_xticks(x); ax.set_xticklabels(ORDER)
+        ax.set_ylim(0, 1.05); ax.set_ylabel(label); ax.grid(axis="y", alpha=0.3)
+    axs[0].legend(fontsize=7, loc="lower right")
+    fig.suptitle("Métricas por polígono: pista A vs pista B (IC bootstrap 95 %)", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(FIG2 / "metricas_poligono.png"); plt.close(fig)
+
+
+def fig_pixel_vs_polygon(comp):
+    x = np.arange(len(ORDER)); w = 0.26
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4.0))
+    for ax, suffix, label in [(axs[0], "oa", "OA"), (axs[1], "kappa", "Kappa")]:
+        ax.bar(x - w, comp[f"{suffix}_pixel"], w, label="Píxel (A)", color="#2166ac")
+        ax.bar(x, comp[f"{suffix}_polygon_A"], w, label="Polígono A (votación)", color="#92c5de")
+        ax.bar(x + w, comp[f"{suffix}_polygon_B"], w, label="Polígono B (medianas)", color="#1b7837")
+        ax.set_xticks(x); ax.set_xticklabels(ORDER)
+        ax.set_ylim(0, 1.05); ax.set_ylabel(label); ax.grid(axis="y", alpha=0.3)
+    axs[0].legend(fontsize=7, loc="lower right", ncol=1)
+    fig.suptitle("Comparación píxel vs polígono", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(FIG2 / "pixel_vs_poligono.png"); plt.close(fig)
+
+
+def fig_purity(mpoly):
+    x = np.arange(len(ORDER)); w = 0.36
+    fig, ax = plt.subplots(figsize=(8, 3.8))
+    ax.bar(x - w / 2, mpoly["mean_purity"], w, label="Pureza media", color="#2166ac")
+    ax.bar(x + w / 2, mpoly["mean_pixel_accuracy"], w,
+           label="Acierto medio por polígono", color="#92c5de")
+    ax.set_xticks(x); ax.set_xticklabels(ORDER)
+    ax.set_ylim(0, 1.05); ax.set_ylabel("Valor"); ax.grid(axis="y", alpha=0.3)
+    ax.legend(fontsize=8, loc="lower right")
+    ax.set_title("Pureza y acierto por polígono (pista A)")
+    fig.tight_layout(); fig.savefig(FIG2 / "pureza_poligonos.png"); plt.close(fig)
+
+
+def tables(d, best):
+    summ, cms, per, split = d["summ"], d["cms"], d["per"], d["split"]
+    mpoly, mtrain, comp, icc = d["mpoly"], d["mtrain"], d["comp"], d["icc"]
+
+    # 1. Resumen oficial por píxel, mejor valor en negrita
     cols = ["oa", "kappa", "precision_macro", "recall_macro", "f1_macro"]
     best_val = {c: summ[c].max() for c in cols}
 
@@ -136,13 +244,13 @@ def tables(summ, cms, per, split, best):
     rows = [f"{m} & {summ.loc[m, 'name']} & " + " & ".join(cell(m, c) for c in cols)
             + f" & {dec(summ.loc[m, 'cv_oa_mean'], 3)} $\\pm$ {dec(summ.loc[m, 'cv_oa_std'], 3)} \\\\"
             for m in ORDER]
-    write_table("metricas_resumen", "Métricas iniciales sobre el conjunto de prueba (24 polígonos) y "
-                "exactitud global de la validación cruzada agrupada por polígono. En negrita, el mejor valor",
-                "tab:metricas", "tabular", "llcccccc",
-                ["", "Modelo", "OA", "Kappa", "Precisión", "Recall", "F1", "OA VC"], rows,
+    write_table("metricas_resumen", "Métricas sobre el conjunto de prueba (24 polígonos, "
+                "472 píxeles) y OA LOO out-of-fold $\\pm$ error estándar de la OA por pliegue. "
+                "En negrita, el mejor valor", "tab:metricas", "tabular", "llcccccc",
+                ["", "Modelo", "OA", "Kappa", "Precisión", "Recall", "F1", "OA LOO"], rows,
                 pre="\\small\n\\setlength{\\tabcolsep}{4pt}")
 
-    # 2. Matriz de confusión del mejor modelo (conteos), con totales y exactitudes
+    # 2. Matriz de confusión del mejor modelo por píxel
     cm = cms[best].to_numpy()
     rows = []
     for i in range(6):
@@ -152,17 +260,17 @@ def tables(summ, cms, per, split, best):
     ua = [cm[j, j] / cm[:, j].sum() if cm[:, j].sum() else 0 for j in range(6)]
     rows += ["\\midrule", "Total & " + " & ".join(str(v) for v in cm.sum(0)) + f" & {cm.sum()} & \\\\",
              "EU (\\%) & " + " & ".join(dec(u * 100, 1) for u in ua) + " & & \\\\"]
-    write_table("matriz_mejor", f"Matriz de confusión del mejor modelo inicial ({summ.loc[best, 'name']}). "
+    write_table("matriz_mejor", f"Matriz de confusión del mejor modelo por píxel ({summ.loc[best, 'name']}). "
                 "Filas: clase real; columnas: clase predicha; EP: exactitud del productor; EU: exactitud del usuario",
                 "tab:matriz_mejor", "tabular", "l" + "r" * 8,
                 ["Real / Predicha"] + [SHORT[k] for k in range(1, 7)] + ["Total", "EP (\\%)"],
                 rows, pre="\\small\n\\setlength{\\tabcolsep}{3.5pt}")
 
-    # 3. Métricas por clase del mejor modelo
+    # 3. Métricas por clase del mejor modelo por píxel
     p = per[best]
     rows = [f"{CLASS_LABELS[r.class_id]} & {dec(r.precision, 3)} & {dec(r.recall, 3)} & "
             f"{dec(r.f1, 3)} & {int(r.support)} \\\\" for r in p.itertuples()]
-    write_table("por_clase_mejor", f"Precisión, recall y F1 por clase del mejor modelo inicial "
+    write_table("por_clase_mejor", f"Precisión, recall y F1 por clase del mejor modelo por píxel "
                 f"({summ.loc[best, 'name']})", "tab:por_clase", "tabular", "lcccr",
                 ["Clase", "Precisión", "Recall", "F1", "Píxeles de prueba"], rows)
 
@@ -177,7 +285,7 @@ def tables(summ, cms, per, split, best):
                 "tabular", "lrrrr",
                 ["Clase", "Polígonos entren.", "Píxeles entren.", "Polígonos prueba", "Píxeles prueba"], rows)
 
-    # 5. Estadística del TSV: media ± desviación por banda y clase (DN)
+    # 5. Estadística del TSV por píxel
     df = pd.read_csv(TSV, sep="\t")
     mean = df.groupby("class_id")[BANDS].mean(); std = df.groupby("class_id")[BANDS].std()
     rows = [f"{b} & " + " & ".join(f"{mean.loc[c, b]:.0f} $\\pm$ {std.loc[c, b]:.0f}" for c in range(1, 7))
@@ -203,17 +311,65 @@ def tables(summ, cms, per, split, best):
                 "tab:modelos", "tabularx", "llX", ["", "Modelo", "Configuración inicial"], rows,
                 pre="\\small")
 
+    # 7. Métricas por polígono: pista A (votación) y pista B (medianas)
+    rows = [f"{m} & {dec(mpoly.loc[m, 'oa'], 3)} & {dec(mpoly.loc[m, 'kappa'], 3)} & "
+            f"{dec(mpoly.loc[m, 'f1_macro'], 3)} & {dec(mpoly.loc[m, 'mean_purity'], 3)} & "
+            f"{dec(mtrain.loc[m, 'oa'], 3)} & {dec(mtrain.loc[m, 'kappa'], 3)} & "
+            f"{dec(mtrain.loc[m, 'f1_macro'], 3)} \\\\" for m in ORDER]
+    write_table("metricas_poligono", "Métricas por polígono (24 de prueba). Pista A: votación "
+                "mayoritaria de las predicciones por píxel; pista B: mediana por polígono e índices. "
+                "Las diferencias de uno o dos polígonos no son concluyentes",
+                "tab:metricas_poligono", "tabular", "lccccccc",
+                ["Modelo", "A OA", "A Kappa", "A F1", "A pureza", "B OA", "B Kappa", "B F1"],
+                rows, pre="\\small\n\\setlength{\\tabcolsep}{3.5pt}")
+
+    # 8. Comparación directa píxel vs polígono
+    rows = [f"{m} & {dec(comp.loc[m, 'oa_pixel'], 3)} & {dec(comp.loc[m, 'kappa_pixel'], 3)} & "
+            f"{dec(comp.loc[m, 'oa_polygon_A'], 3)} & {dec(comp.loc[m, 'kappa_polygon_A'], 3)} & "
+            f"{dec(comp.loc[m, 'oa_polygon_B'], 3)} & {dec(comp.loc[m, 'kappa_polygon_B'], 3)} \\\\"
+            for m in ORDER]
+    write_table("pixel_vs_poligono", "Comparación de la unidad de evaluación: píxel, polígono A "
+                "(votación) y polígono B (medianas)", "tab:pixel_vs_poligono", "tabular",
+                "lcccccc", ["Modelo", "OA píxel", "Kappa píxel", "OA pol. A", "Kappa pol. A",
+                            "OA pol. B", "Kappa pol. B"], rows, pre="\\small")
+
+    # 9. Pureza y acierto por polígono (pista A)
+    rows = [f"{m} & {dec(mpoly.loc[m, 'mean_purity'], 3)} & "
+            f"{dec(mpoly.loc[m, 'mean_pixel_accuracy'], 3)} \\\\" for m in ORDER]
+    write_table("pureza", "Pureza media (fracción de píxeles que votan por la clase mayoritaria) "
+                "y acierto medio por polígono en la pista A", "tab:pureza", "tabular", "lcc",
+                ["Modelo", "Pureza media", "Acierto medio"], rows, pre="\\small")
+
+    # 10. ICC y tamaño efectivo de muestra
+    rows = [f"{r.band} & {dec(r.icc, 3)} & {dec(r.n_eff, 1)} \\\\" for r in icc.itertuples()]
+    write_table("icc", "Correlación intraclase (ICC) por banda y tamaño efectivo de muestra "
+                "considerando el polígono como unidad", "tab:icc", "tabular", "lcc",
+                ["Banda", "ICC", "$n_{\\mathrm{eff}}$"], rows, pre="\\small")
+
 
 def main():
     FIG2.mkdir(parents=True, exist_ok=True); TAB2.mkdir(parents=True, exist_ok=True)
-    summ, cms, per, split, imp = load()
-    best = best_model(summ)
-    fig_confusion(summ, cms); fig_metrics(summ); fig_importance(imp); fig_split_map(split)
-    tables(summ, cms, per, split, best)
+    d = load()
+    best = best_by(d["summ"])
+    fig_confusion(d["summ"], d["cms"])
+    fig_metrics(d["summ"])
+    fig_importance(d["imp"])
+    fig_split_map(d["split"])
+    fig_confusion_polygon(d["mtrain"], d["cms_poly"])
+    fig_metrics_polygon(d["mpoly"], d["mtrain"], d["boot"])
+    fig_pixel_vs_polygon(d["comp"])
+    fig_purity(d["mpoly"])
+    fig_importance_polygon(d["imp_poly"])
+    tables(d, best)
     q = json.loads((RESULTS / "tsv_quality.json").read_text(encoding="utf-8"))
-    (TAB2 / "resumen.json").write_text(json.dumps({"mejor_modelo": best, **q}, indent=2,
-                                                  ensure_ascii=False), encoding="utf-8")
-    print("Mejor modelo inicial:", best, "| figuras en", FIG2, "| tablas en", TAB2)
+    best_A = best_by(d["mpoly"])
+    best_B = best_by(d["mtrain"])
+    (TAB2 / "resumen.json").write_text(json.dumps(
+        {"mejor_modelo": best, "mejor_modelo_pixel": best,
+         "mejor_modelo_poligono_A": best_A, "mejor_modelo_poligono_B": best_B, **q},
+        indent=2, ensure_ascii=False), encoding="utf-8")
+    print("Mejor píxel:", best, "| A polígono:", best_A, "| B polígono:", best_B,
+          "| figuras en", FIG2, "| tablas en", TAB2)
 
 
 if __name__ == "__main__":

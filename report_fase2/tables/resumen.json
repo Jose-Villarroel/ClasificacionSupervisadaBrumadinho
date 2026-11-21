@@ -1,7 +1,11 @@
 {
   "mejor_modelo": "SVM",
+  "mejor_modelo_pixel": "SVM",
+  "mejor_modelo_poligono_A": "ANN",
+  "mejor_modelo_poligono_B": "LR",
   "filas": 1416,
   "columnas": 17,
+  "poligonos": 72,
   "valores_nulos": 0,
   "filas_duplicadas": 0,
   "coordenadas_duplicadas": 0,

@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+ \centering
+ \small
+\setlength{\tabcolsep}{3.5pt}
+ \caption{Métricas por polígono (24 de prueba). Pista A: votación mayoritaria de las predicciones por píxel; pista B: mediana por polígono e índices. Las diferencias de uno o dos polígonos no son concluyentes.}
+ \label{tab:metricas_poligono}
+ \begin{tabular}{lccccccc}
+  \toprule
+  Modelo & A OA & A Kappa & A F1 & A pureza & B OA & B Kappa & B F1 \\
+  \midrule
+  LR & 0{,}875 & 0{,}850 & 0{,}866 & 0{,}981 & 0{,}917 & 0{,}900 & 0{,}907 \\
+  DT & 0{,}875 & 0{,}850 & 0{,}868 & 0{,}944 & 0{,}875 & 0{,}850 & 0{,}868 \\
+  RF & 0{,}875 & 0{,}850 & 0{,}868 & 0{,}948 & 0{,}917 & 0{,}900 & 0{,}907 \\
+  SVM & 0{,}917 & 0{,}900 & 0{,}907 & 1{,}000 & 0{,}917 & 0{,}900 & 0{,}907 \\
+  ANN & 0{,}917 & 0{,}900 & 0{,}916 & 0{,}955 & 0{,}875 & 0{,}850 & 0{,}868 \\
+  KNN & 0{,}875 & 0{,}850 & 0{,}868 & 0{,}975 & 0{,}875 & 0{,}850 & 0{,}848 \\
+  \bottomrule
+ \end{tabular}
+\end{table}
