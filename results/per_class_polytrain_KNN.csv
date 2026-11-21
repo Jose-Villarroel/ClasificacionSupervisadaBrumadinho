@@ -1,0 +1,7 @@
+class_id,class_name,precision,recall,f1,support
+1,Vegetacion densa,1.0,1.0,1.0,4
+2,Vegetacion baja,1.0,1.0,1.0,4
+3,Agua,1.0,1.0,1.0,4
+4,Relave minero,0.8,1.0,0.8888888888888888,4
+5,Suelo expuesto,1.0,0.25,0.4,4
+6,Urbano,0.6666666666666666,1.0,0.8,4

@@ -158,7 +158,7 @@ run.bat src\04_phase2_figures.py
 
 | Script | Qué hace | Salidas |
 |---|---|---|
-| `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42), estandariza las bandas, entrena LR, DT, RF, SVM, ANN y KNN, y calcula la matriz de confusión, OA, Kappa, precisión, recall, F1 y una validación cruzada agrupada por polígono | `results/` |
+| `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42). Pista A: entrena con los píxeles y evalúa por píxel y por polígono. Pista B: entrena con la mediana por polígono más índices. Reporta LOO por polígono, IC bootstrap e ICC | `results/` |
 | `src/04_phase2_figures.py` | Matrices de confusión, gráfica de métricas, importancia de bandas, mapa de la división y tablas LaTeX | `report_fase2/figures/`, `report_fase2/tables/` |
 
 Archivos en `results/`:
@@ -169,23 +169,47 @@ Archivos en `results/`:
 | `metrics_summary.csv` | Una fila por modelo: OA, Kappa, métricas macro, validación cruzada y parámetros |
 | `confusion_<modelo>.csv` | Matriz de confusión (filas: clase real; columnas: predicha) |
 | `per_class_<modelo>.csv` | Precisión, recall y F1 por clase |
-| `feature_importance.csv` | Importancia de las bandas en DT y RF |
+| `feature_importance.csv` | Importancia de las bandas en DT y RF (pista A) |
 | `tsv_quality.json` | Control de calidad del TSV |
 | `polygon_sampling.json` | Píxeles candidatos, conservados y descartados por polígono |
 | `polygon_qc.json` | Control de calidad del dataset auxiliar y de las geometrías |
+| `metrics_polygon.csv` | Pista A evaluada por polígono (voto mayoritario y pureza) |
+| `metrics_polytrain.csv` | Pista B (mediana por polígono) |
+| `pixel_vs_polygon.csv` | Comparación directa de las tres evaluaciones |
+| `bootstrap_ci.csv` | IC bootstrap al 95 % de OA, Kappa y F1 |
+| `cv_folds.csv` | OA de cada pliegue LeaveOneGroupOut |
+| `icc.csv` | ICC por banda y tamaño efectivo de muestra |
+| `confusion_polygon_<modelo>.csv` | Matriz de la pista A por polígono |
+| `confusion_polytrain_<modelo>.csv` | Matriz de la pista B |
+| `per_class_polygon_<modelo>.csv` | Métricas por clase de la pista A por polígono |
+| `per_class_polytrain_<modelo>.csv` | Métricas por clase de la pista B |
+| `feature_importance_polytrain.csv` | Importancia de bandas e índices en DT y RF (pista B) |
 
 ### Resultados iniciales (Fase 2)
 
-Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles):
+Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles). La OA de validación cruzada es *out-of-fold* con `LeaveOneGroupOut`; el ± es el error estándar de la OA por pliegue.
 
-| Modelo | OA | Kappa | F1 macro | OA validación cruzada |
+| Modelo | OA | Kappa | F1 macro | OA LOO |
 |---|---|---|---|---|
-| LR (línea base) | 0,883 | 0,857 | 0,868 | 0,891 ± 0,062 |
-| DT | 0,788 | 0,741 | 0,792 | 0,803 ± 0,066 |
-| RF (bonus) | 0,835 | 0,797 | 0,827 | 0,873 ± 0,047 |
-| **SVM** | **0,894** | **0,870** | **0,883** | 0,906 ± 0,054 |
-| ANN | 0,871 | 0,841 | 0,878 | **0,916 ± 0,052** |
-| KNN | 0,828 | 0,789 | 0,828 | 0,888 ± 0,060 |
+| LR (línea base) | 0,883 | 0,857 | 0,868 | 0,887 ± 0,033 |
+| DT | 0,788 | 0,741 | 0,792 | 0,779 ± 0,042 |
+| RF (bonus) | 0,835 | 0,797 | 0,827 | 0,869 ± 0,033 |
+| **SVM** | **0,894** | **0,870** | **0,883** | 0,899 ± 0,031 |
+| ANN | 0,871 | 0,841 | 0,878 | **0,901 ± 0,028** |
+| KNN | 0,828 | 0,789 | 0,828 | 0,874 ± 0,033 |
+
+Al agregar las predicciones por polígono (pista A) y al entrenar con medianas (pista B):
+
+| Modelo | A: OA polígono | A: Kappa | A: pureza | B: OA polígono | B: Kappa |
+|---|---|---|---|---|---|
+| LR | 0,875 | 0,850 | 0,981 | **0,917** | **0,900** |
+| DT | 0,875 | 0,850 | 0,944 | 0,875 | 0,850 |
+| RF | 0,875 | 0,850 | 0,948 | **0,917** | **0,900** |
+| **SVM** | **0,917** | **0,900** | **1,000** | **0,917** | **0,900** |
+| ANN | **0,917** | **0,900** | 0,955 | 0,875 | 0,850 |
+| KNN | 0,875 | 0,850 | 0,975 | 0,875 | 0,850 |
+
+El ICC por banda (0,95–0,996) indica que los 1416 píxeles equivalen a unas 72 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
 
 Vegetación y agua se clasifican sin errores. La confusión está entre suelo expuesto, relave y urbano: los polígonos de prueba `5_03` y `5_11` se clasifican completos como urbano y como relave, respectivamente.
 

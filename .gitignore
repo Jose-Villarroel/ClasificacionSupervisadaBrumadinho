@@ -23,3 +23,10 @@ report*/*.fls
 
 # ZIP para Overleaf (se regenera)
 report*_overleaf.zip
+
+# Productos derivados que no se versionan
+results/*.joblib
+data/polygon_candidates.*
+data/predicted/
+outputs/
+.playwright-mcp/
