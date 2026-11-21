@@ -1,0 +1,109 @@
+{
+  "dataset": "training_polygons.tsv",
+  "filas": 72,
+  "columnas": 37,
+  "pixeles_totales": 1416,
+  "poligonos_por_clase": {
+    "1": 12,
+    "2": 12,
+    "3": 12,
+    "4": 12,
+    "5": 12,
+    "6": 12
+  },
+  "pixeles_por_clase": {
+    "1": 300,
+    "2": 300,
+    "3": 108,
+    "4": 300,
+    "5": 300,
+    "6": 108
+  },
+  "nulos": 0,
+  "poly_id_duplicados": 0,
+  "poligonos_sin_pixeles": [],
+  "muestreo": {
+    "total_descartados": 0,
+    "poligonos_con_menos_de_5_pixeles": [],
+    "poligonos_con_mas_de_20pct_descartado": [],
+    "poligonos_con_mas_de_30pct_atipicos": [
+      "3_11",
+      "3_12",
+      "6_04",
+      "6_12"
+    ]
+  },
+  "geometria": {
+    "epsg": 32723,
+    "geometrias_invalidas": 0,
+    "solapes": [],
+    "areas_m2_por_clase": {
+      "1": {
+        "poligonos": 12,
+        "area_m2_media": 2500.0,
+        "area_m2_min": 2500.0,
+        "area_m2_max": 2500.0
+      },
+      "2": {
+        "poligonos": 12,
+        "area_m2_media": 2500.0,
+        "area_m2_min": 2500.0,
+        "area_m2_max": 2500.0
+      },
+      "3": {
+        "poligonos": 12,
+        "area_m2_media": 900.0,
+        "area_m2_min": 900.0,
+        "area_m2_max": 900.0
+      },
+      "4": {
+        "poligonos": 12,
+        "area_m2_media": 2500.0,
+        "area_m2_min": 2500.0,
+        "area_m2_max": 2500.0
+      },
+      "5": {
+        "poligonos": 12,
+        "area_m2_media": 2500.0,
+        "area_m2_min": 2500.0,
+        "area_m2_max": 2500.0
+      },
+      "6": {
+        "poligonos": 12,
+        "area_m2_media": 900.0,
+        "area_m2_min": 900.0,
+        "area_m2_max": 900.0
+      }
+    },
+    "distancia_min_m_por_clase": {
+      "1": 496.4876634922564,
+      "2": 359.02646142032484,
+      "3": 22.360679774997898,
+      "4": 170.0,
+      "5": 186.81541692269406,
+      "6": 230.0
+    }
+  },
+  "indices": {
+    "NDVI": {
+      "min": -0.507246,
+      "max": 0.903384
+    },
+    "NDWI": {
+      "min": -0.800587,
+      "max": 0.667075
+    },
+    "MNDWI": {
+      "min": -0.656918,
+      "max": 0.687764
+    },
+    "NDBI": {
+      "min": -0.442561,
+      "max": 0.289204
+    },
+    "BSI": {
+      "min": -0.345226,
+      "max": 0.341268
+    }
+  }
+}

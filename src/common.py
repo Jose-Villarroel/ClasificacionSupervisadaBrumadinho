@@ -20,6 +20,9 @@ TARGET_EPSG = 32723  # WGS 84 / UTM zona 23S
 BANDS = ["B01", "B02", "B03", "B04", "B05", "B06",
          "B07", "B08", "B8A", "B09", "B11", "B12"]
 
+# Índices espectrales calculados a partir de las bandas
+INDICES = ["NDVI", "NDWI", "MNDWI", "NDBI", "BSI"]
+
 # Longitud de onda central (nm) y resolución nativa (m), Sentinel-2A
 BAND_INFO = {
     "B01": ("Aerosol costero", 443, 60),
@@ -43,6 +46,7 @@ STUDY_AREA = DATA / "study_area.gpkg"
 ROI = DATA / "ROI_Brumadinho.gpkg"
 POLYGONS = DATA / "training_polygons.gpkg"
 TSV = DATA / "training_dataset.tsv"
+POLY_TSV = DATA / "training_polygons.tsv"
 
 # Clases SCL consideradas inválidas (sin datos, saturado, sombra, nubes, cirros)
 SCL_INVALID = [0, 1, 3, 8, 9, 10]
@@ -72,3 +76,16 @@ CLASS_COLORS = {
     5: "#f4a582",
     6: "#d6604d",
 }
+
+
+def add_indices(df):
+    """Añade NDVI, NDWI, MNDWI, NDBI y BSI a un DataFrame con las bandas BANDS."""
+    b = {band: df[band].astype("float64") for band in BANDS}
+    eps = 1e-6
+    df["NDVI"] = (b["B08"] - b["B04"]) / (b["B08"] + b["B04"] + eps)
+    df["NDWI"] = (b["B03"] - b["B08"]) / (b["B03"] + b["B08"] + eps)
+    df["MNDWI"] = (b["B03"] - b["B11"]) / (b["B03"] + b["B11"] + eps)
+    df["NDBI"] = (b["B11"] - b["B08"]) / (b["B11"] + b["B08"] + eps)
+    df["BSI"] = ((b["B11"] + b["B04"]) - (b["B08"] + b["B02"])) / (
+        (b["B11"] + b["B04"]) + (b["B08"] + b["B02"]) + eps)
+    return df

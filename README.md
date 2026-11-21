@@ -92,6 +92,10 @@ Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  
 | Urbano | 12 | 108 |
 | **Total** | **72** | **1416** |
 
+### Dataset auxiliar por polígono
+
+`data/training_polygons.tsv` es un derivado con **una fila por polígono**: mediana e IQR de cada banda, número de píxeles y los índices NDVI, NDWI, MNDWI, NDBI y BSI. Se usa para el experimento por polígono de la Fase 2; el entregable de la Fase 1 sigue siendo el TSV por píxel.
+
 Para leerlo en Python:
 
 ```python
@@ -128,16 +132,18 @@ python -m venv .venv
 
 ```bat
 run.bat src\01_extract_tsv.py
+run.bat src\01b_polygon_dataset.py
 run.bat src\02_figures.py
 ```
 
 | Script | Qué hace | Entradas | Salidas |
 |---|---|---|---|
-| `src/common.py` | Rutas, bandas, clases y colores compartidos | — | — |
-| `src/01_extract_tsv.py` | Toma cada píxel cuyo centro cae dentro de un polígono, descarta los inválidos según la SCL, convierte las coordenadas a lat/lon y escribe el TSV | stack, SCL, polígonos | `data/training_dataset.tsv` |
+| `src/common.py` | Rutas, bandas, clases, colores e índices compartidos | — | — |
+| `src/01_extract_tsv.py` | Toma cada píxel cuyo centro cae dentro de un polígono, descarta los inválidos según la SCL, convierte las coordenadas a lat/lon y escribe el TSV | stack, SCL, polígonos | `data/training_dataset.tsv`, `results/polygon_sampling.json` |
+| `src/01b_polygon_dataset.py` | Agrega cada polígono (mediana, IQR, índices) y hace control de calidad | TSV de píxeles, polígonos, muestreo | `data/training_polygons.tsv`, `results/polygon_qc.json` |
 | `src/02_figures.py` | Mapas, firmas espectrales y tablas LaTeX del reporte | stack, SCL, polígonos, TSV, metadatos | `report/figures/`, `report/tables/` |
 
-Si cambian los polígonos, corran los scripts en orden (01 → 02 → 03 → 04) y luego actualicen los reportes.
+Si cambian los polígonos, corran los scripts en orden (01 → 01b → 02 → 03 → 04) y luego actualicen los reportes.
 
 ### Fase 2: entrenamiento
 
@@ -165,6 +171,8 @@ Archivos en `results/`:
 | `per_class_<modelo>.csv` | Precisión, recall y F1 por clase |
 | `feature_importance.csv` | Importancia de las bandas en DT y RF |
 | `tsv_quality.json` | Control de calidad del TSV |
+| `polygon_sampling.json` | Píxeles candidatos, conservados y descartados por polígono |
+| `polygon_qc.json` | Control de calidad del dataset auxiliar y de las geometrías |
 
 ### Resultados iniciales (Fase 2)
 
@@ -210,12 +218,14 @@ Para compilar cualquiera de los dos en Overleaf:
 │   ├── study_area.gpkg            # rectángulo del área de estudio
 │   ├── ROI_Brumadinho.gpkg        # corredor del relave (midterm)
 │   ├── training_polygons.gpkg     # 72 polígonos de entrenamiento
-│   └── training_dataset.tsv       # dataset de entrenamiento
+│   ├── training_dataset.tsv       # dataset de entrenamiento (fila = píxel)
+│   └── training_polygons.tsv      # dataset auxiliar (fila = polígono)
 ├── qgis/
 │   └── ProyectoFinal.qgz          # proyecto de QGIS con todas las capas
 ├── src/
 │   ├── common.py
 │   ├── 01_extract_tsv.py
+│   ├── 01b_polygon_dataset.py
 │   ├── 02_figures.py
 │   ├── 03_train_models.py         # Fase 2: entrenamiento y métricas
 │   └── 04_phase2_figures.py       # Fase 2: figuras y tablas

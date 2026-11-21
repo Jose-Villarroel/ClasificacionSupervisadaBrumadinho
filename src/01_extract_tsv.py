@@ -15,7 +15,7 @@ import rasterio
 from pyproj import Transformer
 from rasterio.features import rasterize
 
-from common import (BANDS, POLYGONS, SCL, SCL_INVALID, STACK,
+from common import (BANDS, POLYGONS, RESULTS, SCL, SCL_INVALID, STACK,
                     TARGET_EPSG, TSV)
 
 
@@ -39,11 +39,25 @@ def main():
         all_touched=False,
     )
 
-    rows, cols = np.nonzero(idx)
-    keep = ~np.isin(scl[rows, cols], SCL_INVALID) & (stack[:, rows, cols] > 0).all(0)
+    rows_all, cols_all = np.nonzero(idx)
+    keep = (~np.isin(scl[rows_all, cols_all], SCL_INVALID)
+            & (stack[:, rows_all, cols_all] > 0).all(0))
     dropped = int((~keep).sum())
-    rows, cols = rows[keep], cols[keep]
+    rows, cols = rows_all[keep], cols_all[keep]
     pid = idx[rows, cols] - 1
+
+    # Conteo de píxeles candidatos, conservados y descartados por polígono.
+    pid_all = idx[rows_all, cols_all] - 1
+    sampling = pd.DataFrame({"poly_id": polys["poly_id"].to_numpy()[pid_all],
+                             "kept": keep.astype(int)})
+    counts = (sampling.groupby("poly_id")
+              .agg(n_candidates=("kept", "size"), n_kept=("kept", "sum"))
+              .reindex(polys["poly_id"].to_numpy(), fill_value=0))
+    counts["n_dropped"] = counts["n_candidates"] - counts["n_kept"]
+    counts = counts.astype(int).sort_index().reset_index()
+    RESULTS.mkdir(exist_ok=True)
+    (RESULTS / "polygon_sampling.json").write_text(
+        counts.to_json(orient="records", indent=2), encoding="utf-8")
 
     x = transform.c + transform.a * (cols + 0.5) + transform.b * (rows + 0.5)
     y = transform.f + transform.d * (cols + 0.5) + transform.e * (rows + 0.5)
@@ -61,6 +75,7 @@ def main():
 
     print(f"TSV: {TSV}  filas={len(df)}  columnas={df.shape[1]}  "
           f"píxeles descartados (SCL/nodata)={dropped}")
+    print(f"Muestreo por polígono: {RESULTS / 'polygon_sampling.json'}")
     print(df.groupby(["class_id", "class_name"]).agg(
         poligonos=("poly_id", "nunique"), pixeles=("poly_id", "size")))
 
