@@ -11,8 +11,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import rasterio
 from matplotlib.patches import Patch
-from osgeo import gdal
 
 from common import (BAND_INFO, BANDS, CLASS_COLORS, CLASS_LABELS, CLASSES, FIG2,
                     POLYGONS, RESULTS, ROI, STACK, TAB2, TARGET_EPSG, TSV)
@@ -100,10 +100,11 @@ def fig_importance(imp):
 
 
 def fig_split_map(split):
-    ds = gdal.Open(str(STACK))
-    gt, w, h = ds.GetGeoTransform(), ds.RasterXSize, ds.RasterYSize
-    rgb = np.dstack([stretch(ds.GetRasterBand(i).ReadAsArray().astype("float32")) for i in (4, 3, 2)])
-    ext = [gt[0], gt[0] + gt[1] * w, gt[3] + gt[5] * h, gt[3]]
+    with rasterio.open(STACK) as ds:
+        transform, w, h = ds.transform, ds.width, ds.height
+        rgb = np.dstack([stretch(ds.read(i).astype("float32")) for i in (4, 3, 2)])
+    ext = [transform.c, transform.c + transform.a * w,
+           transform.f + transform.e * h, transform.f]
     polys = gpd.read_file(POLYGONS).to_crs(TARGET_EPSG).merge(split[["poly_id", "set"]], on="poly_id")
     roi = gpd.read_file(ROI).to_crs(TARGET_EPSG)
     fig, ax = plt.subplots(figsize=(10, 4.6))

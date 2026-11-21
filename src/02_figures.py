@@ -8,7 +8,7 @@ import geopandas as gpd
 import matplotlib
 import numpy as np
 import pandas as pd
-from osgeo import gdal
+import rasterio
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,7 +19,6 @@ from common import (BAND_INFO, BANDS, CLASS_COLORS, CLASS_LABELS as CLASSES, FIG
                     POLYGONS, ROI, SCL, SCL_INVALID, STACK,
                     STUDY_AREA, TAB, TARGET_EPSG, TSV)
 
-gdal.UseExceptions()
 plt.rcParams.update({"font.size": 9, "savefig.bbox": "tight", "savefig.dpi": 150})
 
 
@@ -72,11 +71,12 @@ def write_table(name, caption, label, env, spec, header, rows, pre=""):
 def main():
     FIG.mkdir(parents=True, exist_ok=True); TAB.mkdir(parents=True, exist_ok=True)
     meta = json.loads(METADATA.read_text(encoding="utf-8"))
-    ds = gdal.Open(str(STACK))
-    gt, w, h = ds.GetGeoTransform(), ds.RasterXSize, ds.RasterYSize
-    a = ds.ReadAsArray().astype("float32") / 10000
+    with rasterio.open(STACK) as ds:
+        transform, w, h = ds.transform, ds.width, ds.height
+        a = ds.read().astype("float32") / 10000
     B = {b: a[i] for i, b in enumerate(BANDS)}
-    ext = [gt[0], gt[0] + gt[1] * w, gt[3] + gt[5] * h, gt[3]]
+    ext = [transform.c, transform.c + transform.a * w,
+           transform.f + transform.e * h, transform.f]
     tc = np.dstack([stretch(B["B04"]), stretch(B["B03"]), stretch(B["B02"])])
     fc = np.dstack([stretch(B["B08"]), stretch(B["B04"]), stretch(B["B03"])])
     swir = np.dstack([stretch(B["B12"]), stretch(B["B08"]), stretch(B["B04"])])
@@ -110,7 +110,8 @@ def main():
     fig.savefig(FIG / "falso_color.jpg", pil_kwargs={"quality": 85}); plt.close(fig)
 
     # 3. Máscara SCL
-    scl = gdal.Open(str(SCL)).ReadAsArray()
+    with rasterio.open(SCL) as ds:
+        scl = ds.read(1)
     fig, ax = plt.subplots(figsize=(10, 4.6))
     ax.imshow(tc * 0.55, extent=ext)
     inv = np.ma.masked_where(~np.isin(scl, SCL_INVALID), np.ones_like(scl))

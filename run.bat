@@ -1,6 +1,11 @@
 @echo off
-rem Ejecuta un script con el Python que trae QGIS (GDAL, geopandas, pandas, matplotlib).
+rem Ejecuta un script con el entorno del proyecto (.venv si existe).
+rem Crear el entorno una sola vez:
+rem     python -m venv .venv
+rem     .venv\Scripts\pip install -r requirements.txt
 rem Uso:  run.bat src\01_extract_tsv.py
-rem Si QGIS esta instalado en otra ruta o version, cambia la linea siguiente.
-call "C:\Program Files\QGIS 3.44.13\bin\o4w_env.bat"
-python %*
+if exist "%~dp0.venv\Scripts\python.exe" (
+    "%~dp0.venv\Scripts\python.exe" %*
+) else (
+    python %*
+)

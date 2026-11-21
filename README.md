@@ -117,9 +117,14 @@ Las rutas son relativas: funciona en cualquier computador siempre que se manteng
 
 ## 7. Código
 
-No hay que instalar nada. Los scripts usan el **Python que trae QGIS**, que incluye GDAL, geopandas, pandas y matplotlib. [`run.bat`](run.bat) lo activa. Si tu QGIS está en otra ruta o versión, edita la línea `call ...o4w_env.bat`.
+Todo el pipeline usa un **único entorno de Python 3.10+** y no requiere QGIS para ejecutarse. Se crea una sola vez:
 
-Desde la carpeta del repositorio:
+```bat
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+```
+
+[`run.bat`](run.bat) usa ese entorno (o el `python` del sistema si `.venv` no existe). Desde la carpeta del repositorio:
 
 ```bat
 run.bat src\01_extract_tsv.py
@@ -134,23 +139,16 @@ run.bat src\02_figures.py
 
 Si cambian los polígonos, corran los scripts en orden (01 → 02 → 03 → 04) y luego actualicen los reportes.
 
-### Fase 2: entorno de machine learning
+### Fase 2: entrenamiento
 
-El Python de QGIS no trae scikit-learn, así que los modelos usan un entorno aparte (`.venv`). Se crea una sola vez, con Python 3.10 o superior:
-
-```bat
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-```
-
-Después, desde la carpeta del repositorio:
+El mismo entorno `.venv` incluye scikit-learn. Desde la carpeta del repositorio:
 
 ```bat
-run_ml.bat src\03_train_models.py
-run.bat    src\04_phase2_figures.py
+run.bat src\03_train_models.py
+run.bat src\04_phase2_figures.py
 ```
 
-`run_ml.bat` usa el entorno `.venv` y `run.bat` usa el Python de QGIS. El script 04 necesita GDAL y geopandas para el mapa.
+[`run_ml.bat`](run_ml.bat) se conserva como alias de `run.bat`.
 
 | Script | Qué hace | Salidas |
 |---|---|---|
@@ -201,9 +199,9 @@ Para compilar cualquiera de los dos en Overleaf:
 ```
 .
 ├── README.md
-├── run.bat                        # ejecuta scripts con el Python de QGIS
-├── run_ml.bat                     # ejecuta scripts con el entorno .venv (scikit-learn)
-├── requirements.txt               # dependencias del entorno de machine learning
+├── run.bat                        # ejecuta scripts con el entorno .venv (o python)
+├── run_ml.bat                     # alias de run.bat
+├── requirements.txt               # dependencias del entorno único
 ├── data/
 │   ├── raw/
 │   │   ├── S2_20190201_stack.tif  # imagen de 12 bandas, 10 m, EPSG:32723
