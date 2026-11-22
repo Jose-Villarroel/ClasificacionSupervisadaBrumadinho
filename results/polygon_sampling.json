@@ -300,12 +300,6 @@
     "n_dropped":0
   },
   {
-    "poly_id":"5_03",
-    "n_candidates":25,
-    "n_kept":25,
-    "n_dropped":0
-  },
-  {
     "poly_id":"5_04",
     "n_candidates":25,
     "n_kept":25,
@@ -348,13 +342,49 @@
     "n_dropped":0
   },
   {
-    "poly_id":"5_11",
+    "poly_id":"5_12",
     "n_candidates":25,
     "n_kept":25,
     "n_dropped":0
   },
   {
-    "poly_id":"5_12",
+    "poly_id":"5_13",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_14",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_15",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_16",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_17",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_18",
+    "n_candidates":25,
+    "n_kept":25,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"5_19",
     "n_candidates":25,
     "n_kept":25,
     "n_dropped":0

@@ -1,0 +1,7 @@
+model,class_id,class_name,recall_antes,recall_despues,f1_antes,f1_despues
+SVM,4,Relave minero,1.0,1.0,0.888889,0.888889
+SVM,5,Suelo expuesto,0.5,0.75,0.666667,0.857143
+SVM,6,Urbano,1.0,1.0,0.742268,1.0
+ANN,4,Relave minero,0.76,0.87,0.767677,0.930481
+ANN,5,Suelo expuesto,0.63,1.0,0.673797,0.938967
+ANN,6,Urbano,1.0,1.0,0.827586,1.0

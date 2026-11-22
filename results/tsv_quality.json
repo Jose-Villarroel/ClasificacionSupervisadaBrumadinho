@@ -1,7 +1,7 @@
 {
-  "filas": 1416,
+  "filas": 1541,
   "columnas": 17,
-  "poligonos": 72,
+  "poligonos": 77,
   "valores_nulos": 0,
   "filas_duplicadas": 0,
   "coordenadas_duplicadas": 0,
@@ -12,7 +12,7 @@
     "Vegetacion baja": 300,
     "Agua": 108,
     "Relave minero": 300,
-    "Suelo expuesto": 300,
+    "Suelo expuesto": 425,
     "Urbano": 108
   }
 }

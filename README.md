@@ -68,7 +68,9 @@ El `class_id` será el valor de cada píxel en el GeoTIFF temático de la Fase 3
 
 ## 4. Polígonos de entrenamiento
 
-[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **72 polígonos, 12 por clase**, con los campos `class_id`, `class_name` y `poly_id`.
+[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **77 polígonos**: 12 por clase y 17 de suelo expuesto, con los campos `class_id`, `class_name`, `poly_id` y `source`.
+
+Se retiraron `5_03` y `5_11` por ambigüedad y se añadieron `5_13`–`5_19` como candidatos espectrales (`source = candidato`) sobre superficies desnudas homogéneas.
 
 Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se revisan visualmente en QGIS. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
 
@@ -76,7 +78,7 @@ Para editarlos, abre el proyecto de QGIS (sección 6), activa la edición de la 
 
 ## 5. El dataset: `data/training_dataset.tsv`
 
-Es una tabla separada por **tabulaciones**, con una fila por píxel: **1416 filas** y 17 columnas.
+Es una tabla separada por **tabulaciones**, con una fila por píxel: **1541 filas** y 17 columnas.
 
 ```
 Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  class_name  poly_id
@@ -88,9 +90,9 @@ Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  
 | Vegetación baja | 12 | 300 |
 | Agua | 12 | 108 |
 | Relave minero | 12 | 300 |
-| Suelo expuesto | 12 | 300 |
+| Suelo expuesto | 17 | 425 |
 | Urbano | 12 | 108 |
-| **Total** | **72** | **1416** |
+| **Total** | **77** | **1541** |
 
 ### Dataset auxiliar por polígono
 
@@ -191,27 +193,31 @@ Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles). La OA de va
 
 | Modelo | OA | Kappa | F1 macro | OA LOO |
 |---|---|---|---|---|
-| LR (línea base) | 0,883 | 0,857 | 0,868 | 0,887 ± 0,033 |
-| DT | 0,788 | 0,741 | 0,792 | 0,779 ± 0,042 |
-| RF (bonus) | 0,835 | 0,797 | 0,827 | 0,869 ± 0,033 |
-| **SVM** | **0,894** | **0,870** | **0,883** | 0,899 ± 0,031 |
-| ANN | 0,871 | 0,841 | 0,878 | **0,901 ± 0,028** |
-| KNN | 0,828 | 0,789 | 0,828 | 0,874 ± 0,033 |
+| LR (línea base) | 0,934 | 0,919 | 0,938 | 0,932 ± 0,026 |
+| DT | 0,905 | 0,881 | 0,888 | 0,894 ± 0,034 |
+| RF (bonus) | 0,939 | 0,924 | 0,941 | 0,917 ± 0,028 |
+| SVM | 0,947 | 0,935 | 0,958 | **0,942 ± 0,023** |
+| **ANN** | **0,972** | **0,966** | **0,978** | 0,931 ± 0,023 |
+| KNN | 0,939 | 0,924 | 0,945 | 0,923 ± 0,026 |
 
 Al agregar las predicciones por polígono (pista A) y al entrenar con medianas (pista B):
 
 | Modelo | A: OA polígono | A: Kappa | A: pureza | B: OA polígono | B: Kappa |
 |---|---|---|---|---|---|
-| LR | 0,875 | 0,850 | 0,981 | **0,917** | **0,900** |
-| DT | 0,875 | 0,850 | 0,944 | 0,875 | 0,850 |
-| RF | 0,875 | 0,850 | 0,948 | **0,917** | **0,900** |
-| **SVM** | **0,917** | **0,900** | **1,000** | **0,917** | **0,900** |
-| ANN | **0,917** | **0,900** | 0,955 | 0,875 | 0,850 |
-| KNN | 0,875 | 0,850 | 0,975 | 0,875 | 0,850 |
+| LR | 0,917 | 0,900 | 0,986 | 0,958 | 0,950 |
+| DT | 0,875 | 0,850 | 0,987 | 0,958 | 0,950 |
+| RF | 0,958 | 0,950 | 0,969 | 0,958 | 0,950 |
+| SVM | 0,958 | 0,950 | **1,000** | 0,917 | 0,900 |
+| **ANN** | **1,000** | **1,000** | 0,978 | 0,958 | 0,950 |
+| KNN | 0,958 | 0,950 | 0,978 | 0,917 | 0,900 |
 
-El ICC por banda (0,95–0,996) indica que los 1416 píxeles equivalen a unas 72 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
+En la pista B hay empate en 0,958/0,950 entre LR, DT, RF y ANN.
 
-Vegetación y agua se clasifican sin errores. La confusión está entre suelo expuesto, relave y urbano: los polígonos de prueba `5_03` y `5_11` se clasifican completos como urbano y como relave, respectivamente.
+El ICC por banda (0,947–0,996) indica que los 1541 píxeles equivalen a unas 77–81 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
+
+La mejora frente a la versión anterior combina dos cambios de datos: se retiraron dos polígonos ambiguos y se añadieron siete candidatos de suelo. No es solo un cambio de modelo.
+
+Vegetación y agua se clasifican sin errores. La SVM aún asigna completo `5_08` (suelo) a relave; la ANN lo corrige, pero asigna a suelo 25 píxeles de relave. Los antiguos `5_03` y `5_11` ya no están en el dataset.
 
 ## 8. Reportes (LaTeX)
 

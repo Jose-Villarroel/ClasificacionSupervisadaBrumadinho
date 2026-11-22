@@ -20,8 +20,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from common import (BANDS, INDICES, POLYGONS, POLY_TSV, RESULTS, TARGET_EPSG,
-                    TSV, add_indices)
+from common import (BANDS, CLASSES, INDICES, POLYGONS, POLY_TSV, RESULTS,
+                    TARGET_EPSG, TSV, add_indices)
 
 MIN_PIXELS = 5
 MAX_DROPPED_FRAC = 0.20
@@ -80,6 +80,13 @@ def main():
         raise ValueError(f"Faltan columnas en {TSV.name}: {sorted(missing)}")
     if polys["poly_id"].duplicated().any():
         raise ValueError("Hay poly_id duplicados en el GPKG")
+    expected = polys["class_id"].map(CLASSES)
+    actual = polys["class_name"].astype(str).str.strip()
+    bad = polys[expected.isna() | (actual != expected)]
+    if len(bad):
+        detail = ", ".join(f"{r.poly_id}: {int(r.class_id)}/{r.class_name}"
+                           for r in bad.itertuples())
+        raise ValueError(f"class_id y class_name inconsistentes: {detail}")
     unknown = set(df["poly_id"]) - set(polys["poly_id"])
     if unknown:
         raise ValueError(f"Píxeles con poly_id ausente del GPKG: {sorted(unknown)}")

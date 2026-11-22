@@ -49,16 +49,21 @@ poly_id,class_id,class_name,n_pixels,set
 4_12,4,Relave minero,25,entrenamiento
 5_01,5,Suelo expuesto,25,entrenamiento
 5_02,5,Suelo expuesto,25,entrenamiento
-5_03,5,Suelo expuesto,25,prueba
 5_04,5,Suelo expuesto,25,entrenamiento
 5_05,5,Suelo expuesto,25,prueba
 5_06,5,Suelo expuesto,25,entrenamiento
 5_07,5,Suelo expuesto,25,entrenamiento
-5_08,5,Suelo expuesto,25,entrenamiento
-5_09,5,Suelo expuesto,25,entrenamiento
-5_10,5,Suelo expuesto,25,prueba
-5_11,5,Suelo expuesto,25,prueba
+5_08,5,Suelo expuesto,25,prueba
+5_09,5,Suelo expuesto,25,prueba
+5_10,5,Suelo expuesto,25,entrenamiento
 5_12,5,Suelo expuesto,25,entrenamiento
+5_13,5,Suelo expuesto,25,entrenamiento
+5_14,5,Suelo expuesto,25,entrenamiento
+5_15,5,Suelo expuesto,25,entrenamiento
+5_16,5,Suelo expuesto,25,entrenamiento
+5_17,5,Suelo expuesto,25,entrenamiento
+5_18,5,Suelo expuesto,25,prueba
+5_19,5,Suelo expuesto,25,entrenamiento
 6_01,6,Urbano,9,prueba
 6_02,6,Urbano,9,entrenamiento
 6_03,6,Urbano,9,entrenamiento

@@ -30,3 +30,7 @@ data/polygon_candidates.*
 data/predicted/
 outputs/
 .playwright-mcp/
+
+# Bloqueos temporales de GeoPackage
+*.gpkg-wal
+*.gpkg-shm
