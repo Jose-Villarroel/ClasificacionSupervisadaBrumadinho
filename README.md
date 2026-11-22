@@ -68,9 +68,9 @@ El `class_id` será el valor de cada píxel en el GeoTIFF temático de la Fase 3
 
 ## 4. Polígonos de entrenamiento
 
-[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **77 polígonos**: 12 por clase y 17 de suelo expuesto, con los campos `class_id`, `class_name`, `poly_id` y `source`.
+[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **88 polígonos**: 12 de vegetación densa y baja, 18 de agua, 12 de relave, 17 de suelo y 17 de urbano, con los campos `class_id`, `class_name`, `poly_id` y `source`.
 
-Se retiraron `5_03` y `5_11` por ambigüedad y se añadieron `5_13`–`5_19` como candidatos espectrales (`source = candidato`) sobre superficies desnudas homogéneas.
+Se retiraron `5_03` y `5_11` por ambigüedad y se añadieron candidatos espectrales revisados: `3_13`–`3_18` (agua), `5_13`–`5_19` (suelo) y `6_13`, `6_15`, `6_16`, `6_17`, `6_20` (urbano). Los candidatos que quedaron llevan `source = revisado`.
 
 Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se revisan visualmente en QGIS. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
 
@@ -78,7 +78,7 @@ Para editarlos, abre el proyecto de QGIS (sección 6), activa la edición de la 
 
 ## 5. El dataset: `data/training_dataset.tsv`
 
-Es una tabla separada por **tabulaciones**, con una fila por píxel: **1541 filas** y 17 columnas.
+Es una tabla separada por **tabulaciones**, con una fila por píxel: **1640 filas** y 17 columnas.
 
 ```
 Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  class_name  poly_id
@@ -88,11 +88,11 @@ Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  
 |---|---|---|
 | Vegetación densa | 12 | 300 |
 | Vegetación baja | 12 | 300 |
-| Agua | 12 | 108 |
+| Agua | 18 | 162 |
 | Relave minero | 12 | 300 |
 | Suelo expuesto | 17 | 425 |
-| Urbano | 12 | 108 |
-| **Total** | **77** | **1541** |
+| Urbano | 17 | 153 |
+| **Total** | **88** | **1640** |
 
 ### Dataset auxiliar por polígono
 
@@ -193,31 +193,35 @@ Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles). La OA de va
 
 | Modelo | OA | Kappa | F1 macro | OA LOO |
 |---|---|---|---|---|
-| LR (línea base) | 0,934 | 0,919 | 0,938 | 0,932 ± 0,026 |
-| DT | 0,905 | 0,881 | 0,888 | 0,894 ± 0,034 |
-| RF (bonus) | 0,939 | 0,924 | 0,941 | 0,917 ± 0,028 |
-| SVM | 0,947 | 0,935 | 0,958 | **0,942 ± 0,023** |
-| **ANN** | **0,972** | **0,966** | **0,978** | 0,931 ± 0,023 |
-| KNN | 0,939 | 0,924 | 0,945 | 0,923 ± 0,026 |
+| **LR (línea base)** | **0,947** | **0,935** | **0,933** | 0,940 ± 0,022 |
+| DT | 0,867 | 0,837 | 0,863 | 0,844 ± 0,032 |
+| RF (bonus) | 0,909 | 0,888 | 0,903 | 0,916 ± 0,025 |
+| SVM | **0,947** | **0,935** | **0,933** | **0,945 ± 0,020** |
+| ANN | 0,898 | 0,875 | 0,895 | 0,930 ± 0,023 |
+| KNN | 0,892 | 0,868 | 0,890 | 0,929 ± 0,023 |
+
+LR y SVM empatan en la mejor OA/Kappa/F1 de prueba; SVM tiene la mejor OA LOO.
 
 Al agregar las predicciones por polígono (pista A) y al entrenar con medianas (pista B):
 
 | Modelo | A: OA polígono | A: Kappa | A: pureza | B: OA polígono | B: Kappa |
 |---|---|---|---|---|---|
-| LR | 0,917 | 0,900 | 0,986 | 0,958 | 0,950 |
-| DT | 0,875 | 0,850 | 0,987 | 0,958 | 0,950 |
-| RF | 0,958 | 0,950 | 0,969 | 0,958 | 0,950 |
-| SVM | 0,958 | 0,950 | **1,000** | 0,917 | 0,900 |
-| **ANN** | **1,000** | **1,000** | 0,978 | 0,958 | 0,950 |
-| KNN | 0,958 | 0,950 | 0,978 | 0,917 | 0,900 |
+| **LR** | **0,958** | **0,950** | **1,000** | **0,958** | **0,950** |
+| DT | 0,917 | 0,900 | 0,972 | 0,917 | 0,900 |
+| RF | 0,917 | 0,900 | 0,988 | **0,958** | **0,950** |
+| SVM | **0,958** | **0,950** | **1,000** | 0,917 | 0,900 |
+| ANN | 0,917 | 0,900 | 0,990 | 0,917 | 0,900 |
+| KNN | 0,917 | 0,900 | 0,998 | 0,875 | 0,850 |
 
-En la pista B hay empate en 0,958/0,950 entre LR, DT, RF y ANN.
+En la pista B, LR y RF empatan en 0,958/0,950.
 
-El ICC por banda (0,947–0,996) indica que los 1541 píxeles equivalen a unas 77–81 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
+El ICC por banda (0,932–0,995) indica que los 1640 píxeles equivalen a unas 88–94 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
 
-La mejora frente a la versión anterior combina dos cambios de datos: se retiraron dos polígonos ambiguos y se añadieron siete candidatos de suelo. No es solo un cambio de modelo.
+**Diseño de la evaluación:** los polígonos nuevos se usan **solo para entrenamiento**; la prueba son 24 polígonos originales. Para vegetación, agua, relave y urbano el conjunto de prueba es el mismo que en la versión de 72 polígonos; en suelo cambió porque se retiraron `5_03` y `5_11`. Así la mejora no viene de evaluar candidatos fáciles.
 
-Vegetación y agua se clasifican sin errores. La SVM aún asigna completo `5_08` (suelo) a relave; la ANN lo corrige, pero asigna a suelo 25 píxeles de relave. Los antiguos `5_03` y `5_11` ya no están en el dataset.
+La mejora frente a la versión de 72 polígonos combina dos cambios de datos: se retiraron dos polígonos ambiguos y se añadieron candidatos de suelo, agua y urbano al entrenamiento. No es solo un cambio de modelo. El ANN que antes parecía perfecto bajó al fijar la prueba original; su mejor resultado dependía de que algunos candidatos cayeran en el test.
+
+Vegetación y agua se clasifican sin errores. La SVM reconoce todo el relave, pero aún confunde 25 píxeles de suelo con urbano; su precisión urbana es 0,59. La ANN también falla en suelo y baja el recall de relave a 0,77. Los antiguos `5_03` y `5_11` ya no están en el dataset.
 
 ## 8. Reportes (LaTeX)
 

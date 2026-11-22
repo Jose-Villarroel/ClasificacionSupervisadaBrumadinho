@@ -35,6 +35,12 @@ poly_id,class_id,class_name,n_pixels,set
 3_10,3,Agua,9,entrenamiento
 3_11,3,Agua,9,entrenamiento
 3_12,3,Agua,9,entrenamiento
+3_13,3,Agua,9,entrenamiento
+3_14,3,Agua,9,entrenamiento
+3_15,3,Agua,9,entrenamiento
+3_16,3,Agua,9,entrenamiento
+3_17,3,Agua,9,entrenamiento
+3_18,3,Agua,9,entrenamiento
 4_01,4,Relave minero,25,entrenamiento
 4_02,4,Relave minero,25,prueba
 4_03,4,Relave minero,25,entrenamiento
@@ -49,11 +55,11 @@ poly_id,class_id,class_name,n_pixels,set
 4_12,4,Relave minero,25,entrenamiento
 5_01,5,Suelo expuesto,25,entrenamiento
 5_02,5,Suelo expuesto,25,entrenamiento
-5_04,5,Suelo expuesto,25,entrenamiento
+5_04,5,Suelo expuesto,25,prueba
 5_05,5,Suelo expuesto,25,prueba
-5_06,5,Suelo expuesto,25,entrenamiento
+5_06,5,Suelo expuesto,25,prueba
 5_07,5,Suelo expuesto,25,entrenamiento
-5_08,5,Suelo expuesto,25,prueba
+5_08,5,Suelo expuesto,25,entrenamiento
 5_09,5,Suelo expuesto,25,prueba
 5_10,5,Suelo expuesto,25,entrenamiento
 5_12,5,Suelo expuesto,25,entrenamiento
@@ -62,7 +68,7 @@ poly_id,class_id,class_name,n_pixels,set
 5_15,5,Suelo expuesto,25,entrenamiento
 5_16,5,Suelo expuesto,25,entrenamiento
 5_17,5,Suelo expuesto,25,entrenamiento
-5_18,5,Suelo expuesto,25,prueba
+5_18,5,Suelo expuesto,25,entrenamiento
 5_19,5,Suelo expuesto,25,entrenamiento
 6_01,6,Urbano,9,prueba
 6_02,6,Urbano,9,entrenamiento
@@ -76,3 +82,8 @@ poly_id,class_id,class_name,n_pixels,set
 6_10,6,Urbano,9,prueba
 6_11,6,Urbano,9,entrenamiento
 6_12,6,Urbano,9,entrenamiento
+6_13,6,Urbano,9,entrenamiento
+6_15,6,Urbano,9,entrenamiento
+6_16,6,Urbano,9,entrenamiento
+6_17,6,Urbano,9,entrenamiento
+6_20,6,Urbano,9,entrenamiento

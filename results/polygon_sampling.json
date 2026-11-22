@@ -216,6 +216,42 @@
     "n_dropped":0
   },
   {
+    "poly_id":"3_13",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"3_14",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"3_15",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"3_16",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"3_17",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"3_18",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
     "poly_id":"4_01",
     "n_candidates":25,
     "n_kept":25,
@@ -457,6 +493,36 @@
   },
   {
     "poly_id":"6_12",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"6_13",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"6_15",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"6_16",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"6_17",
+    "n_candidates":9,
+    "n_kept":9,
+    "n_dropped":0
+  },
+  {
+    "poly_id":"6_20",
     "n_candidates":9,
     "n_kept":9,
     "n_dropped":0

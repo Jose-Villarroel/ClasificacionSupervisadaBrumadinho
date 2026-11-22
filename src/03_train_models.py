@@ -83,9 +83,13 @@ def split_by_polygon(df):
     polys = df.groupby("poly_id").agg(class_id=("class_id", "first"),
                                       class_name=("class_name", "first"),
                                       n_pixels=("class_id", "size")).reset_index()
+    # Los polígonos nuevos (sufijo > 12) se usan solo para entrenamiento.
+    # Así la prueba queda en los polígonos originales y la comparación
+    # antes/después no depende de candidatos elegidos por su firma espectral.
+    suffix = polys["poly_id"].str.extract(r"_(\d+)$")[0].astype(int)
     test = set()
     for _, g in polys.groupby("class_id"):
-        ids = sorted(g["poly_id"])
+        ids = sorted(g.loc[suffix.loc[g.index] <= 12, "poly_id"])
         n_test = min(len(ids) - 1, max(MIN_TEST_POLYS, round(TEST_FRAC * len(ids))))
         test.update(rng.choice(ids, size=n_test, replace=False))
     polys["set"] = np.where(polys["poly_id"].isin(test), "prueba", "entrenamiento")

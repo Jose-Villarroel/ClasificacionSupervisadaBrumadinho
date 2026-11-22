@@ -1,23 +1,23 @@
 {
   "dataset": "training_polygons.tsv",
-  "filas": 77,
+  "filas": 88,
   "columnas": 37,
-  "pixeles_totales": 1541,
+  "pixeles_totales": 1640,
   "poligonos_por_clase": {
     "1": 12,
     "2": 12,
-    "3": 12,
+    "3": 18,
     "4": 12,
     "5": 17,
-    "6": 12
+    "6": 17
   },
   "pixeles_por_clase": {
     "1": 300,
     "2": 300,
-    "3": 108,
+    "3": 162,
     "4": 300,
     "5": 425,
-    "6": 108
+    "6": 153
   },
   "nulos": 0,
   "poly_id_duplicados": 0,
@@ -29,8 +29,11 @@
     "poligonos_con_mas_de_30pct_atipicos": [
       "3_11",
       "3_12",
+      "3_14",
       "6_04",
-      "6_12"
+      "6_12",
+      "6_17",
+      "6_20"
     ]
   },
   "geometria": {
@@ -51,7 +54,7 @@
         "area_m2_max": 2500.0
       },
       "3": {
-        "poligonos": 12,
+        "poligonos": 18,
         "area_m2_media": 900.0,
         "area_m2_min": 900.0,
         "area_m2_max": 900.0
@@ -69,7 +72,7 @@
         "area_m2_max": 2500.0
       },
       "6": {
-        "poligonos": 12,
+        "poligonos": 17,
         "area_m2_media": 900.0,
         "area_m2_min": 900.0,
         "area_m2_max": 900.0
@@ -78,10 +81,10 @@
     "distancia_min_m_por_clase": {
       "1": 496.4876634922564,
       "2": 359.02646142032484,
-      "3": 22.360679774997898,
+      "3": 10.0,
       "4": 170.0,
       "5": 40.0,
-      "6": 230.0
+      "6": 60.0
     }
   },
   "indices": {
@@ -99,7 +102,7 @@
     },
     "NDBI": {
       "min": -0.442561,
-      "max": 0.289204
+      "max": 0.292422
     },
     "BSI": {
       "min": -0.345226,

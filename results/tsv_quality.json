@@ -1,7 +1,7 @@
 {
-  "filas": 1541,
+  "filas": 1640,
   "columnas": 17,
-  "poligonos": 77,
+  "poligonos": 88,
   "valores_nulos": 0,
   "filas_duplicadas": 0,
   "coordenadas_duplicadas": 0,
@@ -10,9 +10,9 @@
   "pixeles_por_clase": {
     "Vegetacion densa": 300,
     "Vegetacion baja": 300,
-    "Agua": 108,
+    "Agua": 162,
     "Relave minero": 300,
     "Suelo expuesto": 425,
-    "Urbano": 108
+    "Urbano": 153
   }
 }
