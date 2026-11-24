@@ -25,7 +25,7 @@
 \maketitle
 
 \begin{abstract}
-Este documento presenta la segunda fase del análisis comparativo de arquitecturas de aprendizaje automático para clasificar coberturas en Brumadinho (Brasil) con una escena Sentinel-2 del 1 de febrero de 2019. Primero se documenta el archivo TSV de entrenamiento: 1640 píxeles, doce bandas y seis clases, extraídos de 88 polígonos. Luego se describen su preprocesamiento y dos formas de entrenamiento con los cinco modelos del enunciado más Random Forest: la pista A entrena con píxeles y se evalúa por píxel y por polígono; la pista B entrena con la mediana de cada polígono más índices espectrales. La prueba son 24 polígonos originales; los polígonos añadidos se usan solo para entrenamiento. La regresión logística y la SVM empatan con una exactitud global de 94{,}7\,\% y un Kappa de 0{,}935; la SVM obtiene el mejor resultado en validación cruzada dejando un polígono fuera (94{,}5\,\%). Los errores se concentran en suelo expuesto y urbano.
+Este documento presenta la segunda fase del análisis comparativo de arquitecturas de aprendizaje automático para clasificar coberturas en Brumadinho (Brasil) con una escena Sentinel-2 del 1 de febrero de 2019. Primero se documenta el archivo TSV de entrenamiento: 1640 píxeles, doce bandas y seis clases, extraídos de 88 polígonos. Luego se describen su preprocesamiento y dos formas de entrenamiento con los cinco modelos del enunciado más Random Forest: la pista A entrena con píxeles y se evalúa por píxel y por polígono; la pista B entrena con la mediana de cada polígono más índices espectrales. La prueba actual son 24 polígonos originales; los polígonos añadidos se usan solo para entrenamiento. La regresión logística y la SVM empatan en este test con una exactitud global de 94{,}7\,\% y un Kappa de 0{,}935; la SVM obtiene el mejor resultado en validación cruzada dejando un polígono fuera (94{,}5\,\%). La comparación pareada con la versión de 72 polígonos muestra que la mejora es pequeña e inconsistente: en el test original la SVM se mantiene en 89{,}4\,\%. Los errores se concentran en suelo expuesto y urbano.
 \end{abstract}
 
 \section{Introducción}
@@ -36,7 +36,7 @@ En la Fase~1 se definieron el evento de estudio, el área de estudio y la imagen
 \end{enumerate}
 Los modelos se implementaron en Python con scikit-learn \parencite{Pedregosa2011}. La optimización de hiperparámetros, la comparación formal entre arquitecturas y la predicción sobre la imagen completa corresponden a la Fase~3.
 
-Además de las métricas por píxel, esta fase evalúa la unidad de análisis por polígono. Los resultados se reportan con el polígono como unidad de muestreo y de validación, y se documenta el efecto de ampliar el conjunto de entrenamiento con polígonos nuevos.
+Además de las métricas por píxel, esta fase evalúa la unidad de análisis por polígono. Los resultados se reportan con el polígono como unidad de muestreo y de validación, y la ampliación del conjunto de entrenamiento se compara con la versión anterior sobre el mismo test.
 
 \section{Documentación del archivo TSV}
 
@@ -97,7 +97,7 @@ Los píxeles de un mismo polígono son vecinos y casi idénticos entre sí. Si s
  \label{fig:division}
 \end{figure}
 
-Este diseño mantiene el mismo conjunto de prueba para vegetación, agua, relave y urbano que en la versión de 72 polígonos. En suelo cambió porque se retiraron \texttt{5\_03} y \texttt{5\_11} por ambigüedad. Así, la comparación antes/después mide el efecto de añadir datos de entrenamiento y no el de evaluar polígonos nuevos seleccionados por su firma espectral.
+Este diseño mantiene el mismo conjunto de prueba para vegetación, agua, relave y urbano, pero no para suelo: se retiraron \texttt{5\_03} y \texttt{5\_11} por ambigüedad y la prueba de suelo pasó a \texttt{5\_04}, \texttt{5\_05}, \texttt{5\_06} y \texttt{5\_09}. Por eso, la comparación directa entre la versión de 72 y la de 88 polígonos no es pareada: los dos polígonos que fallaba la SVM salieron del test. La Tabla~\ref{tab:comparacion_pareada} compara ambos modelos sobre el mismo conjunto y separa el efecto de los datos del efecto del test.
 
 \subsection{Validación cruzada y estabilidad}
 Como complemento a la división única, se usó \texttt{LeaveOneGroupOut}: en cada pliegue se deja fuera un polígono completo y se entrena con los demás. Se reportan la OA y el Kappa out-of-fold, la media y el error estándar de la OA por pliegue, y un intervalo de confianza bootstrap al 95\,\% calculado remuestreando polígonos de prueba estratificados por clase.
@@ -134,6 +134,11 @@ La Tabla~\ref{tab:metricas} y la Figura~\ref{fig:metricas} resumen las métricas
  \caption{Exactitud global y Kappa sobre el conjunto de prueba, y OA out-of-fold ($\pm$ error estándar) de la validación cruzada.}
  \label{fig:metricas}
 \end{figure}
+
+\subsection{Comparación con la versión de 72 polígonos}
+Para separar el efecto de los datos del efecto del test, la Tabla~\ref{tab:comparacion_pareada} compara ambos entrenamientos sobre el mismo conjunto. En el test original, la SVM no cambia (0{,}894) y la regresión logística sube 1{,}1 puntos porcentuales. En el test nuevo, la SVM sube 4{,}9 puntos frente a una base sin fuga, pero la regresión logística solo 0{,}4. En los 22 polígonos no ambiguos ambos modelos son casi perfectos. Por tanto, el 94{,}7\,\% del test nuevo no debe compararse con el 89{,}4\,\% del test original: la diferencia principal es la composición del test de suelo.
+
+\input{tables/comparacion_pareada.tex}
 
 \subsection{Matrices de confusión}
 La Figura~\ref{fig:matrices} presenta las matrices de confusión de los seis modelos. La vegetación densa, la vegetación baja, el agua y el relave se clasifican sin errores en la regresión logística y en la SVM. El error restante está en suelo expuesto: uno de los cuatro polígonos de prueba, \texttt{5\_06}, se clasifica completo como urbano (25 píxeles). Por eso el recall de suelo es 0{,}75, la precisión del urbano es 0{,}59 y su F1 es 0{,}742.
@@ -182,7 +187,7 @@ La Tabla~\ref{tab:pureza} y la Figura~\ref{fig:pureza} muestran la pureza media 
 \end{figure}
 
 \subsection{Comparación píxel vs polígono}
-La Tabla~\ref{tab:pixel_vs_poligono} y la Figura~\ref{fig:pixel_vs_poligono} comparan las tres evaluaciones. Al pasar de píxel a polígono, la OA de la regresión logística sube de 0{,}947 a 0{,}958 y la de la SVM se mantiene en 0{,}958. La evaluación por polígono es más estable porque evita que unos pocos píxeles mezclados dominen la métrica, pero también es más gruesa: solo hay 24 polígonos de prueba.
+La Tabla~\ref{tab:pixel_vs_poligono} y la Figura~\ref{fig:pixel_vs_poligono} comparan las tres evaluaciones. Al pasar de píxel a polígono, la OA de la regresión logística sube de 0{,}947 a 0{,}958 y la de la SVM también sube de 0{,}947 a 0{,}958. La evaluación por polígono es más estable porque evita que unos pocos píxeles mezclados dominen la métrica, pero también es más gruesa: solo hay 24 polígonos de prueba.
 
 \input{tables/pixel_vs_poligono.tex}
 
@@ -218,7 +223,7 @@ La Figura~\ref{fig:importancia} muestra la importancia de las bandas en la pista
 \section{Discusión}
 Los resultados indican que las doce bandas permiten separar con exactitud la vegetación, el agua y el relave. La dificultad está en suelo expuesto y urbano: sus firmas son parecidas y, a 10\,m, un polígono de suelo puede contener lotes, vías o materiales de construcción. El error de \texttt{5\_06} es consistente con esa ambigüedad: no es un píxel aislado, es un polígono completo.
 
-La ampliación del dataset cambió el punto de partida. Se retiraron dos polígonos ambiguos de suelo y se añadieron candidatos de suelo, agua y urbano al entrenamiento. La prueba se mantuvo en los 24 polígonos originales para vegetación, agua, relave y urbano. Con ese diseño, la regresión logística y la SVM son los modelos más robustos; la red neuronal, que antes parecía perfecta, baja a 0{,}898 cuando no se evalúa con candidatos fáciles. Esto muestra que una métrica alta puede ser un artefacto del conjunto de prueba.
+La ampliación del dataset cambió el punto de partida. Se retiraron dos polígonos ambiguos de suelo y se añadieron candidatos de suelo, agua y urbano al entrenamiento. La prueba se mantuvo para vegetación, agua, relave y urbano, pero en suelo cambió al retirar \texttt{5\_03} y \texttt{5\_11}. Por eso, la comparación con la versión de 72 polígonos no es pareada. La Tabla~\ref{tab:comparacion_pareada} muestra que en el test original la SVM no mejora y la regresión logística sube 1{,}1 puntos; en el test nuevo, la SVM sube 4{,}9 puntos frente a una base sin fuga, pero la regresión logística solo 0{,}4. El 94{,}7\,\% describe el test actual, no una mejora demostrada por la ampliación. La red neuronal, que antes parecía perfecta, baja a 0{,}898 en este test; una métrica alta puede ser un artefacto del conjunto de prueba.
 
 Quedan limitaciones. Las etiquetas son pseudo-etiquetas construidas con reglas espectrales y revisión visual, no verdad de campo. Los candidatos de agua quedaron a 10\,m de polígonos existentes por la estrechez del cauce, lo que introduce autocorrelación espacial. El test tiene solo 24 polígonos y las clases de vegetación y relave siguen con 12 polígonos cada una. Por eso las diferencias de uno o dos polígonos no deben interpretarse como superioridad definitiva.
 

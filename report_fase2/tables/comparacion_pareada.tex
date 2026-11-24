@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+ \centering
+ \small
+ \setlength{\tabcolsep}{4pt}
+ \caption{Comparación pareada del efecto de la ampliación (OA). \emph{Original 24}: test de la versión de 72 polígonos. \emph{Nuevo 24}: test de la versión de 88. \emph{Común 22}: test original sin \texttt{5\_03} ni \texttt{5\_11}. La base del test nuevo se entrena solo con polígonos originales que no están en ese test, para evitar fuga.}
+ \label{tab:comparacion_pareada}
+ \begin{tabular}{lcccc}
+  \toprule
+  Test & Modelo & Base & Nuevo & $\Delta$ \\
+  \midrule
+  Original 24 & LR & 0{,}883 & 0{,}894 & $+0{,}011$ \\
+  Original 24 & SVM & 0{,}894 & 0{,}894 & $0{,}000$ \\
+  Nuevo 24 & LR & 0{,}943 & 0{,}947 & $+0{,}004$ \\
+  Nuevo 24 & SVM & 0{,}898 & 0{,}947 & $+0{,}049$ \\
+  Común 22 & LR & 0{,}988 & 1{,}000 & $+0{,}012$ \\
+  Común 22 & SVM & 1{,}000 & 1{,}000 & $0{,}000$ \\
+  \bottomrule
+ \end{tabular}
+\end{table}
