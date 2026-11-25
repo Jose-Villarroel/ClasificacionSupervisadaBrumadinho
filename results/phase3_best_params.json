@@ -1,0 +1,67 @@
+{
+  "LR": {
+    "name": "Regresión logística",
+    "search": "grid",
+    "params": {
+      "clf__C": 100.0,
+      "clf__class_weight": null
+    },
+    "cv_kappa": 0.9381421022756131
+  },
+  "DT": {
+    "name": "Árbol de decisión",
+    "search": "grid",
+    "params": {
+      "clf__class_weight": null,
+      "clf__criterion": "gini",
+      "clf__max_depth": 8,
+      "clf__min_samples_leaf": 1
+    },
+    "cv_kappa": 0.7907457148637121
+  },
+  "RF": {
+    "name": "Random Forest",
+    "search": "random",
+    "params": {
+      "clf__n_estimators": 500,
+      "clf__min_samples_leaf": 2,
+      "clf__max_features": "sqrt",
+      "clf__max_depth": 12,
+      "clf__class_weight": "balanced"
+    },
+    "cv_kappa": 0.8562197726327891
+  },
+  "SVM": {
+    "name": "Máquina de soporte vectorial",
+    "search": "grid",
+    "params": {
+      "clf__C": 100.0,
+      "clf__class_weight": null,
+      "clf__gamma": "scale"
+    },
+    "cv_kappa": 0.9176141675612444
+  },
+  "ANN": {
+    "name": "Red neuronal (MLP)",
+    "search": "random",
+    "params": {
+      "clf__learning_rate_init": 0.001,
+      "clf__hidden_layer_sizes": [
+        128,
+        64
+      ],
+      "clf__alpha": 0.1
+    },
+    "cv_kappa": 0.9147219043467999
+  },
+  "KNN": {
+    "name": "K vecinos más cercanos",
+    "search": "grid",
+    "params": {
+      "clf__metric": "manhattan",
+      "clf__n_neighbors": 15,
+      "clf__weights": "uniform"
+    },
+    "cv_kappa": 0.9041543511022324
+  }
+}
