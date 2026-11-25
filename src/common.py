@@ -12,6 +12,15 @@ RESULTS = ROOT / "results"
 FIG2 = ROOT / "report_fase2" / "figures"
 TAB2 = ROOT / "report_fase2" / "tables"
 
+# Fase 3
+MODELS = ROOT / "models"
+FINAL_MODEL = MODELS / "final_model.joblib"
+MODEL_CARD = MODELS / "model_card.json"
+PREDICTION = DATA / "prediction"
+REPORT3 = ROOT / "report_fase3"
+FIG3 = REPORT3 / "figures"
+TAB3 = REPORT3 / "tables"
+
 # Área de estudio (WGS84): lon_min, lat_min, lon_max, lat_max
 AOI_BBOX = (-44.224111, -20.159193, -44.096943, -20.108763)
 TARGET_EPSG = 32723  # WGS 84 / UTM zona 23S
