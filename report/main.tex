@@ -192,12 +192,14 @@ A partir de los píxeles que cumplen cada regla se seleccionaron parcelas cuadra
 Se seleccionaron 12 parcelas por clase.
 
 \paragraph{Revisión visual.}
-Cada parcela se revisa en QGIS sobre las composiciones en color verdadero y en falso color. Las que caen sobre bordes o coberturas mixtas se eliminan o se reubican.
+Las parcelas propuestas se inspeccionaron en conjunto en QGIS sobre las composiciones en color verdadero y en falso color. Las 72 parcelas originales no tuvieron una revisión individual parcela por parcela (campo \texttt{source} = \texttt{borrador}); esa revisión queda pendiente para la Fase~3.
 
 El resultado inicial fueron 72 parcelas, 12 por clase.
 
 \paragraph{Ampliación y revisión.}
-En una revisión posterior se eliminaron \texttt{5\_03} y \texttt{5\_11}, dos parcelas de suelo ambiguas entre suelo, relave y urbano, y se añadieron candidatos espectrales revisados: \texttt{3\_13}--\texttt{3\_18} (agua), \texttt{5\_13}--\texttt{5\_19} (suelo) y \texttt{6\_13}, \texttt{6\_15}, \texttt{6\_16}, \texttt{6\_17} y \texttt{6\_20} (urbano). Los candidatos se propusieron con la misma lógica espectral, exigiendo homogeneidad interna y ausencia de solapes, y se revisaron sobre las composiciones en color verdadero y SWIR. El conjunto final tiene 88 parcelas: 12 de vegetación densa, 12 de vegetación baja, 18 de agua, 12 de relave, 17 de suelo expuesto y 17 de urbano (Figuras~\ref{fig:poligonos} y~\ref{fig:zoom}). Algunos candidatos de agua quedaron a 10\,m de polígonos existentes por la estrechez del cauce; se reporta como limitación de autocorrelación espacial.
+Después de la evaluación inicial de la Fase~2 se retiraron \texttt{5\_03} y \texttt{5\_11}. Eran los dos polígonos de prueba de suelo que la SVM clasificaba completos como urbano y como relave, y al revisarlos se consideraron ambiguos entre esas clases. Además se añadieron candidatos propuestos con la misma lógica espectral, exigiendo homogeneidad interna y ausencia de solapes: \texttt{3\_13}--\texttt{3\_18} (agua), \texttt{5\_13}--\texttt{5\_19} (suelo) y \texttt{6\_13}, \texttt{6\_15}, \texttt{6\_16}, \texttt{6\_17} y \texttt{6\_20} (urbano). Los candidatos de agua y urbano se revisaron visualmente (\texttt{source} = \texttt{revisado}); los de suelo no tuvieron revisión individual (\texttt{source} = \texttt{candidato}). El conjunto final tiene 88 parcelas: 12 de vegetación densa, 12 de vegetación baja, 18 de agua, 12 de relave, 17 de suelo expuesto y 17 de urbano (Figuras~\ref{fig:poligonos} y~\ref{fig:zoom}).
+
+Cinco candidatos no respetan la separación mínima descrita arriba: \texttt{3\_13}, \texttt{3\_15} y \texttt{3\_17} quedaron a 10\,m de los polígonos de prueba \texttt{3\_02}, \texttt{3\_06} y \texttt{3\_08}, por la estrechez del cauce; \texttt{5\_16} quedó a 40\,m de \texttt{5\_05}, y \texttt{6\_17} a 60\,m de \texttt{6\_01}. Se comprobó que entrenar sin ellos no cambia la exactitud global de la regresión logística ni de la SVM, así que no inflan el resultado, pero se reporta como limitación de autocorrelación espacial.
 
 \begin{figure}[htbp]
  \centering

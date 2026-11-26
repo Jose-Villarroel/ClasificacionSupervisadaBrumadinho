@@ -25,7 +25,7 @@
 \maketitle
 
 \begin{abstract}
-Este documento reúne las dos primeras fases de un análisis comparativo de arquitecturas de aprendizaje automático para la clasificación de coberturas terrestres con imágenes satelitales. En la primera fase se define el evento de estudio, el colapso de la presa I de la mina Córrego do Feijão el 25 de enero de 2019, y se delimita un área de 74{,}2\,km$^2$ en Brumadinho (Brasil). Se describe la escena Sentinel-2 L2A del 1 de febrero de 2019, de la que se usan las doce bandas espectrales remuestreadas a 10\,m, y se construye el conjunto de entrenamiento: 88 polígonos en seis clases de cobertura, de los que se extraen 1640 píxeles en un archivo TSV. En la segunda fase se documenta y preprocesa ese archivo y se entrenan cinco modelos con parámetros iniciales, más Random Forest: regresión logística, árbol de decisión, máquina de soporte vectorial, red neuronal y K vecinos más cercanos. La evaluación combina la vista por píxel y la vista por polígono; los polígonos añadidos se usan solo para entrenamiento y la prueba actual son 24 polígonos originales. La regresión logística y la SVM empatan en este test con una exactitud global de 94{,}7\,\% y un Kappa de 0{,}935; la SVM obtiene el mejor resultado en validación cruzada dejando un polígono fuera (94{,}5\,\%). La comparación pareada con la versión de 72 polígonos muestra que la mejora es pequeña e inconsistente: en el test original la SVM se mantiene en 89{,}4\,\%. Los errores se concentran en suelo expuesto y urbano.
+Este documento reúne las dos primeras fases de un análisis comparativo de arquitecturas de aprendizaje automático para la clasificación de coberturas terrestres con imágenes satelitales. En la primera fase se define el evento de estudio, el colapso de la presa I de la mina Córrego do Feijão el 25 de enero de 2019, y se delimita un área de 74{,}2\,km$^2$ en Brumadinho (Brasil). Se describe la escena Sentinel-2 L2A del 1 de febrero de 2019, de la que se usan las doce bandas espectrales remuestreadas a 10\,m, y se construye el conjunto de entrenamiento: 88 polígonos en seis clases de cobertura, de los que se extraen 1640 píxeles en un archivo TSV. En la segunda fase se documenta y preprocesa ese archivo y se entrenan cinco modelos con parámetros iniciales, más Random Forest: regresión logística, árbol de decisión, máquina de soporte vectorial, red neuronal y K vecinos más cercanos. La evaluación combina la vista por píxel y la vista por polígono; los polígonos añadidos se usan solo para entrenamiento y la prueba actual son 24 polígonos originales. Sobre la prueba original, definida antes de la ampliación, la regresión logística y la SVM alcanzan una exactitud global de 89{,}4\,\%; es el resultado de referencia de esta fase. Dos polígonos de suelo que los modelos fallaban se retiraron después de esa evaluación; en la prueba actual, sin ellos, ambos modelos llegan a 94{,}7\,\% (Kappa 0{,}935), pero esa cifra puede estar sesgada a favor de los modelos y no demuestra una mejora. Los errores se concentran en suelo expuesto y urbano.
 \end{abstract}
 
 \section{Introducción}
@@ -193,12 +193,14 @@ A partir de los píxeles que cumplen cada regla se seleccionaron parcelas cuadra
 Se seleccionaron 12 parcelas por clase.
 
 \paragraph{Revisión visual.}
-Cada parcela se revisa en QGIS sobre las composiciones en color verdadero y en falso color. Las que caen sobre bordes o coberturas mixtas se eliminan o se reubican.
+Las parcelas propuestas se inspeccionaron en conjunto en QGIS sobre las composiciones en color verdadero y en falso color. Las 72 parcelas originales no tuvieron una revisión individual parcela por parcela (campo \texttt{source} = \texttt{borrador}); esa revisión queda pendiente para la Fase~3.
 
 El resultado inicial fueron 72 parcelas, 12 por clase.
 
 \paragraph{Ampliación y revisión.}
-En una revisión posterior se eliminaron \texttt{5\_03} y \texttt{5\_11}, dos parcelas de suelo ambiguas entre suelo, relave y urbano, y se añadieron candidatos espectrales revisados: \texttt{3\_13}--\texttt{3\_18} (agua), \texttt{5\_13}--\texttt{5\_19} (suelo) y \texttt{6\_13}, \texttt{6\_15}, \texttt{6\_16}, \texttt{6\_17} y \texttt{6\_20} (urbano). El conjunto final tiene 88 parcelas: 12 de vegetación densa, 12 de vegetación baja, 18 de agua, 12 de relave, 17 de suelo expuesto y 17 de urbano (Figuras~\ref{fig:poligonos} y~\ref{fig:zoom}). Algunos candidatos de agua quedaron a 10\,m de polígonos existentes por la estrechez del cauce; se reporta como limitación de autocorrelación espacial.
+Después de la evaluación inicial de la Fase~2 se retiraron \texttt{5\_03} y \texttt{5\_11}. Eran los dos polígonos de prueba de suelo que la SVM clasificaba completos como urbano y como relave, y al revisarlos se consideraron ambiguos entre esas clases. Además se añadieron candidatos propuestos con la misma lógica espectral, exigiendo homogeneidad interna y ausencia de solapes: \texttt{3\_13}--\texttt{3\_18} (agua), \texttt{5\_13}--\texttt{5\_19} (suelo) y \texttt{6\_13}, \texttt{6\_15}, \texttt{6\_16}, \texttt{6\_17} y \texttt{6\_20} (urbano). Los candidatos de agua y urbano se revisaron visualmente (\texttt{source} = \texttt{revisado}); los de suelo no tuvieron revisión individual (\texttt{source} = \texttt{candidato}). El conjunto final tiene 88 parcelas: 12 de vegetación densa, 12 de vegetación baja, 18 de agua, 12 de relave, 17 de suelo expuesto y 17 de urbano (Figuras~\ref{fig:poligonos} y~\ref{fig:zoom}).
+
+Cinco candidatos no respetan la separación mínima descrita arriba: \texttt{3\_13}, \texttt{3\_15} y \texttt{3\_17} quedaron a 10\,m de los polígonos de prueba \texttt{3\_02}, \texttt{3\_06} y \texttt{3\_08}, por la estrechez del cauce; \texttt{5\_16} quedó a 40\,m de \texttt{5\_05}, y \texttt{6\_17} a 60\,m de \texttt{6\_01}. Se comprobó que entrenar sin ellos no cambia la exactitud global de la regresión logística ni de la SVM, así que no inflan el resultado, pero se reporta como limitación de autocorrelación espacial.
 
 \begin{figure}[htbp]
  \centering
@@ -312,7 +314,9 @@ Los píxeles de un mismo polígono son vecinos y casi idénticos entre sí. Si s
  \label{fig:division}
 \end{figure}
 
-Este diseño mantiene el mismo conjunto de prueba para vegetación, agua, relave y urbano, pero no para suelo: se retiraron \texttt{5\_03} y \texttt{5\_11} por ambigüedad y la prueba de suelo pasó a \texttt{5\_04}, \texttt{5\_05}, \texttt{5\_06} y \texttt{5\_09}. Por eso, la comparación directa entre la versión de 72 y la de 88 polígonos no es pareada: los dos polígonos que fallaba la SVM salieron del test. La Tabla~\ref{tab:comparacion_pareada} compara ambos modelos sobre el mismo conjunto y separa el efecto de los datos del efecto del test.
+Este diseño mantiene el mismo conjunto de prueba para vegetación, agua, relave y urbano, pero no para suelo: se retiraron \texttt{5\_03} y \texttt{5\_11}, y la prueba de suelo pasó de \texttt{5\_03}, \texttt{5\_05}, \texttt{5\_10} y \texttt{5\_11} a \texttt{5\_04}, \texttt{5\_05}, \texttt{5\_06} y \texttt{5\_09}. Los dos polígonos retirados eran justamente los que la SVM fallaba, y se retiraron después de ver ese resultado. Una decisión así favorece a los modelos en la prueba actual, por lo que el resultado de referencia de esta fase es el de la \textbf{prueba original} (Sección~\ref{sec:referencia}). La Tabla~\ref{tab:comparacion_pareada} compara ambos entrenamientos sobre el mismo conjunto y separa el efecto de los datos del efecto del test.
+
+Cinco polígonos añadidos quedaron por debajo de la separación mínima de la Fase~1 respecto a polígonos de prueba: \texttt{3\_13}, \texttt{3\_15} y \texttt{3\_17} a 10\,m de \texttt{3\_02}, \texttt{3\_06} y \texttt{3\_08}; \texttt{5\_16} a 40\,m de \texttt{5\_05}, y \texttt{6\_17} a 60\,m de \texttt{6\_01}. Se comprobó que entrenar sin esos cinco polígonos da la misma exactitud global en la regresión logística y en la SVM (94{,}7\,\%), así que su cercanía no infla el resultado.
 
 \subsection{Validación cruzada y estabilidad}
 Como complemento a la división única, se usó \texttt{LeaveOneGroupOut}: en cada pliegue se deja fuera un polígono completo y se entrena con los demás. Se reportan la OA y el Kappa out-of-fold, la media y el error estándar de la OA por pliegue, y un intervalo de confianza bootstrap al 95\,\% calculado remuestreando polígonos de prueba estratificados por clase.
@@ -339,7 +343,7 @@ donde $p_o$ es la OA, y $n_{i+}$ y $n_{+i}$ son los totales de la fila y de la c
 \section{Resultados}
 
 \subsection{Comparación de los modelos por píxel}
-La Tabla~\ref{tab:metricas} y la Figura~\ref{fig:metricas} resumen las métricas de los seis modelos. La regresión logística y la SVM empatan en la mejor exactitud global (94{,}7\,\%), el mejor Kappa (0{,}935) y el mejor F1 macro (0{,}933). En la validación cruzada, la SVM obtiene la OA out-of-fold más alta (94{,}5\,\%), seguida de la regresión logística (94{,}0\,\%). El árbol de decisión individual es el modelo más débil (86{,}7\,\%), y el Random Forest lo mejora en unos cuatro puntos. La red neuronal queda en 89{,}8\,\%: su resultado es sensible a la composición de la prueba y no supera a los modelos más simples.
+Esta sección presenta primero las métricas mínimas de la fase, la exactitud global y las matrices de confusión por píxel sobre la prueba actual, y después el resultado de referencia sobre la prueba original (Sección~\ref{sec:referencia}). La Tabla~\ref{tab:metricas} y la Figura~\ref{fig:metricas} resumen las métricas de los seis modelos. En la prueba actual, la regresión logística y la SVM empatan en la mejor exactitud global (94{,}7\,\%), el mejor Kappa (0{,}935) y el mejor F1 macro (0{,}933). En la validación cruzada, la SVM obtiene la OA out-of-fold más alta (94{,}5\,\%), seguida de la regresión logística (94{,}0\,\%). El árbol de decisión individual es el modelo más débil (86{,}7\,\%), y el Random Forest lo mejora en unos cuatro puntos. La red neuronal queda en 89{,}8\,\%: su resultado es sensible a la composición de la prueba y no supera a los modelos más simples.
 
 \input{tables/metricas_resumen.tex}
 
@@ -349,11 +353,6 @@ La Tabla~\ref{tab:metricas} y la Figura~\ref{fig:metricas} resumen las métricas
  \caption{Exactitud global y Kappa sobre el conjunto de prueba, y OA out-of-fold ($\pm$ error estándar) de la validación cruzada.}
  \label{fig:metricas}
 \end{figure}
-
-\subsection{Comparación con la versión de 72 polígonos}
-Para separar el efecto de los datos del efecto del test, la Tabla~\ref{tab:comparacion_pareada} compara ambos entrenamientos sobre el mismo conjunto. En el test original, la SVM no cambia (0{,}894) y la regresión logística sube 1{,}1 puntos porcentuales. En el test nuevo, la SVM sube 4{,}9 puntos frente a una base sin fuga, pero la regresión logística solo 0{,}4. En los 22 polígonos no ambiguos ambos modelos son casi perfectos. Por tanto, el 94{,}7\,\% del test nuevo no debe compararse con el 89{,}4\,\% del test original: la diferencia principal es la composición del test de suelo.
-
-\input{tables/comparacion_pareada.tex}
 
 \subsection{Matrices de confusión}
 La Figura~\ref{fig:matrices} presenta las matrices de confusión de los seis modelos. La vegetación densa, la vegetación baja, el agua y el relave se clasifican sin errores en la regresión logística y en la SVM. El error restante está en suelo expuesto: uno de los cuatro polígonos de prueba, \texttt{5\_06}, se clasifica completo como urbano (25 píxeles). Por eso el recall de suelo es 0{,}75, la precisión del urbano es 0{,}59 y su F1 es 0{,}742.
@@ -365,11 +364,17 @@ La Figura~\ref{fig:matrices} presenta las matrices de confusión de los seis mod
  \label{fig:matrices}
 \end{figure}
 
-La Tabla~\ref{tab:matriz_mejor} muestra la matriz de la regresión logística, que es el mejor modelo por orden alfabético y empata con la SVM, y la Tabla~\ref{tab:por_clase} sus métricas por clase. La red neuronal tiene un error adicional: asigna 23 píxeles de relave a suelo, por lo que su recall de relave baja a 0{,}77 (Tabla~\ref{tab:por_clase}).
+La Tabla~\ref{tab:matriz_mejor} muestra la matriz de la regresión logística, que empata con la SVM en todas las métricas, y la Tabla~\ref{tab:por_clase} sus métricas por clase. La red neuronal tiene un error adicional: asigna 23 píxeles de relave a suelo, por lo que su recall de relave baja a 0{,}77 (Tabla~\ref{tab:por_clase}).
 
 \input{tables/matriz_mejor.tex}
 
 \input{tables/por_clase_mejor.tex}
+
+\subsection{Resultado de referencia: prueba original}
+\label{sec:referencia}
+La Tabla~\ref{tab:comparacion_pareada} compara el entrenamiento con 72 polígonos (base) y con 88 (nuevo) sobre el mismo conjunto de prueba. En la \textbf{prueba original}, definida antes de la ampliación y que incluye \texttt{5\_03} y \texttt{5\_11}, la SVM se mantiene en 0{,}894 y la regresión logística sube de 0{,}883 a 0{,}894. Este es el resultado de referencia de la fase: la ampliación apenas cambia el desempeño. En la prueba actual, la SVM sube 4{,}9 puntos y la regresión logística 0{,}4, y en los 22 polígonos comunes a ambas pruebas los dos modelos son casi perfectos. Por tanto, la diferencia entre 89{,}4\,\% y 94{,}7\,\% se debe sobre todo a la composición de la prueba de suelo, no a los datos nuevos.
+
+\input{tables/comparacion_pareada.tex}
 
 \subsection{Evaluación por polígono}
 La Figura~\ref{fig:matrices_pol} presenta las matrices de confusión por polígono de la pista B (medianas por polígono) y la Tabla~\ref{tab:metricas_poligono} compara las dos pistas. En la pista A, la regresión logística y la SVM aciertan 23 de los 24 polígonos de prueba (OA 0{,}958, Kappa 0{,}950); el único error es \texttt{5\_06}. En la pista B, la regresión logística y el Random Forest también alcanzan 0{,}958/0{,}950. Las diferencias entre modelos son de uno o dos polígonos, por lo que no son concluyentes.
@@ -419,7 +424,7 @@ La Tabla~\ref{tab:icc} presenta la correlación intraclase (ICC) por banda y el 
 \input{tables/icc.tex}
 
 \subsection{Importancia de las variables}
-La Figura~\ref{fig:importancia} muestra la importancia de las bandas en la pista A. El árbol de decisión se apoya en B8A, B12 y B02; el Random Forest reparte la importancia entre B8A, B12 y B04. La Figura~\ref{fig:importancia_pol} muestra la pista B: NDVI, NDWI y MNDWI concentran la mayor importancia, seguidas de B03, B07 y B12. Los índices aportan información que las bandas individuales no capturan de forma directa.
+La Figura~\ref{fig:importancia} muestra la importancia de las bandas en la pista A. El árbol de decisión se apoya en B8A, B12 y B02; el Random Forest reparte la importancia entre B8A, B12 y B04. La Figura~\ref{fig:importancia_pol} muestra la pista B: NDVI, NDWI y MNDWI concentran la mayor importancia, seguidas de B03, B07 y B12. Esta importancia debe leerse con cuidado: NDVI, NDWI y MNDWI son los mismos índices con los que se propusieron las etiquetas, así que su peso está inflado por construcción y no demuestra que aporten información nueva.
 
 \begin{figure}[htbp]
  \centering
@@ -438,9 +443,9 @@ La Figura~\ref{fig:importancia} muestra la importancia de las bandas en la pista
 \section{Discusión}
 Los resultados indican que las doce bandas permiten separar con exactitud la vegetación, el agua y el relave. La dificultad está en suelo expuesto y urbano: sus firmas son parecidas y, a 10\,m, un polígono de suelo puede contener lotes, vías o materiales de construcción. El error de \texttt{5\_06} es consistente con esa ambigüedad: no es un píxel aislado, es un polígono completo.
 
-La ampliación del dataset cambió el punto de partida. Se retiraron dos polígonos ambiguos de suelo y se añadieron candidatos de suelo, agua y urbano al entrenamiento. La prueba se mantuvo para vegetación, agua, relave y urbano, pero en suelo cambió al retirar \texttt{5\_03} y \texttt{5\_11}. Por eso, la comparación con la versión de 72 polígonos no es pareada. La Tabla~\ref{tab:comparacion_pareada} muestra que en el test original la SVM no mejora y la regresión logística sube 1{,}1 puntos; en el test nuevo, la SVM sube 4{,}9 puntos frente a una base sin fuga, pero la regresión logística solo 0{,}4. El 94{,}7\,\% describe el test actual, no una mejora demostrada por la ampliación. La red neuronal, que antes parecía perfecta, baja a 0{,}898 en este test; una métrica alta puede ser un artefacto del conjunto de prueba.
+La ampliación del dataset no mejoró de forma demostrable el desempeño. Se retiraron dos polígonos de suelo después de ver que la SVM los fallaba y se añadieron candidatos de suelo, agua y urbano al entrenamiento. Sobre la prueba original la SVM se mantiene en 89{,}4\,\% y la regresión logística sube 1{,}1 puntos, hasta 89{,}4\,\%. El 94{,}7\,\% de la prueba actual describe un conjunto sin los dos polígonos difíciles, no una mejora de los modelos. La red neuronal queda en 0{,}898 en la prueba actual, por debajo de los modelos más simples.
 
-Quedan limitaciones. Las etiquetas son pseudo-etiquetas construidas con reglas espectrales y revisión visual, no verdad de campo. Los candidatos de agua quedaron a 10\,m de polígonos existentes por la estrechez del cauce, lo que introduce autocorrelación espacial. El test tiene solo 24 polígonos y las clases de vegetación y relave siguen con 12 polígonos cada una. Por eso las diferencias de uno o dos polígonos no deben interpretarse como superioridad definitiva.
+Quedan limitaciones. Las etiquetas son pseudo-etiquetas construidas con reglas espectrales y revisión visual, no verdad de campo. Cinco polígonos añadidos quedaron a 10--60\,m de polígonos de prueba, por debajo de la separación mínima de la Fase~1; aunque se comprobó que no cambian la exactitud, introducen autocorrelación espacial. Los 72 polígonos originales y los candidatos de suelo no tuvieron revisión visual individual. El test tiene solo 24 polígonos y las clases de vegetación y relave siguen con 12 polígonos cada una. Por eso las diferencias de uno o dos polígonos no deben interpretarse como superioridad definitiva.
 
 \section{Reproducibilidad}
 La imagen de doce bandas, la capa SCL y los polígonos de entrenamiento se conservan como insumos del proyecto. A partir de ellos, el conjunto de datos, los modelos, las figuras y las tablas de este documento se generan con cinco scripts de Python sobre un único entorno reproducible descrito en \texttt{requirements.txt}, sin depender de QGIS (Tabla~\ref{tab:scripts}).
@@ -466,7 +471,7 @@ La imagen de doce bandas, la capa SCL y los polígonos de entrenamiento se conse
 En la Fase~3 se realizarán las siguientes tareas:
 \begin{itemize}
  \item optimizar los hiperparámetros de cada modelo, por ejemplo $C$ y $\gamma$ en la SVM, la arquitectura de la red neuronal, $k$ en KNN y la profundidad del árbol, mediante búsqueda en malla con validación cruzada agrupada por polígono;
- \item revisar \texttt{5\_06}, el polígono de suelo que aún se clasifica como urbano, y ampliar vegetación y relave, que siguen con 12 polígonos cada una;
+ \item revisar visualmente los polígonos sin revisión individual (los 72 originales y los candidatos de suelo) con un criterio definido de antemano, no según los errores del modelo; añadir polígonos de suelo y urbano más puros, separados de los de prueba, y ampliar vegetación y relave;
  \item comparar los modelos optimizados con Kappa, precisión, recall y F1, y seleccionar el mejor;
  \item aplicar el modelo seleccionado a toda la imagen para obtener el GeoTIFF temático, simbolizarlo en QGIS y calcular el área de cada clase.
 \end{itemize}

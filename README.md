@@ -70,9 +70,13 @@ El `class_id` será el valor de cada píxel en el GeoTIFF temático de la Fase 3
 
 [`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **88 polígonos**: 12 de vegetación densa y baja, 18 de agua, 12 de relave, 17 de suelo y 17 de urbano, con los campos `class_id`, `class_name`, `poly_id` y `source`.
 
-Se retiraron `5_03` y `5_11` por ambigüedad y se añadieron candidatos espectrales revisados: `3_13`–`3_18` (agua), `5_13`–`5_19` (suelo) y `6_13`, `6_15`, `6_16`, `6_17`, `6_20` (urbano). Los candidatos que quedaron llevan `source = revisado`.
+Después de la evaluación inicial de la Fase 2 se retiraron `5_03` y `5_11`: eran los dos polígonos de prueba de suelo que la SVM fallaba y, al revisarlos, se consideraron ambiguos. Se añadieron candidatos espectrales: `3_13`–`3_18` (agua), `5_13`–`5_19` (suelo) y `6_13`, `6_15`, `6_16`, `6_17`, `6_20` (urbano).
 
-Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se revisan visualmente en QGIS. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
+El campo `source` indica el estado de revisión: `borrador` para los 72 originales (sin revisión individual), `revisado` para los candidatos de agua y urbano y `candidato` para los de suelo (sin revisión individual).
+
+Cinco candidatos quedaron por debajo de la separación mínima respecto a polígonos de prueba: `3_13`, `3_15` y `3_17` a 10 m de `3_02`, `3_06` y `3_08`; `5_16` a 40 m de `5_05`, y `6_17` a 60 m de `6_01`. Entrenar sin ellos da la misma OA en LR y SVM, así que no inflan el resultado.
+
+Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se inspeccionaron en conjunto en QGIS; la revisión individual de cada polígono está pendiente. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
 
 Para editarlos, abre el proyecto de QGIS (sección 6), activa la edición de la capa *Polígonos de entrenamiento*, haz los cambios y guarda. Después vuelve a correr los scripts (sección 7).
 
@@ -189,7 +193,9 @@ Archivos en `results/`:
 
 ### Resultados iniciales (Fase 2)
 
-Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles). La OA de validación cruzada es *out-of-fold* con `LeaveOneGroupOut`; el ± es el error estándar de la OA por pliegue.
+**Resultado de referencia: prueba original.** Sobre los 24 polígonos de prueba definidos antes de la ampliación (incluye `5_03` y `5_11`), LR y SVM entrenadas con los 88 polígonos alcanzan una OA de **0,894**. Con el entrenamiento de 72 polígonos, LR tenía 0,883 y SVM 0,894: la ampliación apenas cambia el desempeño.
+
+Métricas sobre la **prueba actual** (24 polígonos, 472 píxeles), sin `5_03` ni `5_11`. Como esos dos polígonos se retiraron después de ver que la SVM los fallaba, estas cifras pueden estar sesgadas a favor de los modelos. La OA de validación cruzada es *out-of-fold* con `LeaveOneGroupOut`; el ± es el error estándar de la OA por pliegue.
 
 | Modelo | OA | Kappa | F1 macro | OA LOO |
 |---|---|---|---|---|
@@ -213,15 +219,15 @@ Al agregar las predicciones por polígono (pista A) y al entrenar con medianas (
 | ANN | 0,917 | 0,900 | 0,990 | 0,917 | 0,900 |
 | KNN | 0,917 | 0,900 | 0,998 | 0,875 | 0,850 |
 
-En la pista B, LR y RF empatan en 0,958/0,950.
+En la pista B, LR y RF empatan en 0,958/0,950. La importancia de NDVI, NDWI y MNDWI en la pista B está inflada por construcción: son los mismos índices con los que se propusieron las etiquetas.
 
 El ICC por banda (0,932–0,995) indica que los 1640 píxeles equivalen a unas 88–94 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
 
-**Diseño de la evaluación:** los polígonos nuevos se usan **solo para entrenamiento**; la prueba son 24 polígonos originales. Para vegetación, agua, relave y urbano el conjunto de prueba es el mismo que en la versión de 72 polígonos; en suelo cambió porque se retiraron `5_03` y `5_11`. Así la mejora no viene de evaluar candidatos fáciles.
+**Diseño de la evaluación:** los polígonos nuevos se usan **solo para entrenamiento**; la prueba son 24 polígonos originales. Para vegetación, agua, relave y urbano el conjunto de prueba es el mismo que en la versión de 72 polígonos. En suelo cambió: pasó de `5_03`, `5_05`, `5_10` y `5_11` a `5_04`, `5_05`, `5_06` y `5_09`.
 
-La mejora frente a la versión de 72 polígonos combina dos cambios de datos: se retiraron dos polígonos ambiguos y se añadieron candidatos de suelo, agua y urbano al entrenamiento. No es solo un cambio de modelo. El ANN que antes parecía perfecto bajó al fijar la prueba original; su mejor resultado dependía de que algunos candidatos cayeran en el test.
+La diferencia entre 0,894 (prueba original) y 0,947 (prueba actual) se debe sobre todo a la composición de la prueba de suelo, no a los datos nuevos: no es una mejora demostrada de los modelos.
 
-Vegetación y agua se clasifican sin errores. La SVM reconoce todo el relave, pero aún confunde 25 píxeles de suelo con urbano; su precisión urbana es 0,59. La ANN también falla en suelo y baja el recall de relave a 0,77. Los antiguos `5_03` y `5_11` ya no están en el dataset.
+En la prueba actual, vegetación, agua y relave se clasifican sin errores en LR y SVM; el polígono de suelo `5_06` se clasifica completo como urbano (25 píxeles), por lo que la precisión urbana es 0,59. La ANN también falla en suelo y baja el recall de relave a 0,77. Los antiguos `5_03` y `5_11` ya no están en el dataset.
 
 ## 8. Reportes (LaTeX)
 
@@ -251,7 +257,7 @@ Para compilar cualquiera de los dos en Overleaf:
 │   │   └── metadata.json          # metadatos de la escena
 │   ├── study_area.gpkg            # rectángulo del área de estudio
 │   ├── ROI_Brumadinho.gpkg        # corredor del relave (midterm)
-│   ├── training_polygons.gpkg     # 72 polígonos de entrenamiento
+│   ├── training_polygons.gpkg     # 88 polígonos de entrenamiento
 │   ├── training_dataset.tsv       # dataset de entrenamiento (fila = píxel)
 │   └── training_polygons.tsv      # dataset auxiliar (fila = polígono)
 ├── qgis/
