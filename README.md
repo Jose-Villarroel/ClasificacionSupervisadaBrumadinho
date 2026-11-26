@@ -244,7 +244,7 @@ La Fase 3 optimizó los hiperparámetros con validación agrupada por polígono,
 run.bat src\05_tune_models.py
 run.bat src\06_predict_raster.py
 run.bat src\07_phase3_figures.py
-python-qgis.bat src\07b_qgis_map.py
+run_qgis.bat src\07b_qgis_map.py
 run.bat src\08_validate_phase3.py
 ```
 
@@ -281,6 +281,7 @@ Para compilar cualquiera de los reportes en Overleaf:
 ├── README.md
 ├── run.bat                        # ejecuta scripts con el entorno .venv (o python)
 ├── run_ml.bat                     # alias de run.bat
+├── run_qgis.bat                   # ejecuta scripts con el Python de QGIS
 ├── requirements.txt               # dependencias del entorno único
 ├── data/
 │   ├── raw/
