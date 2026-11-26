@@ -1,0 +1,7 @@
+,Vegetacion densa,Vegetacion baja,Agua,Relave minero,Suelo expuesto,Urbano
+Vegetacion densa,4,0,0,0,0,0
+Vegetacion baja,0,4,0,0,0,0
+Agua,0,0,4,0,0,0
+Relave minero,0,0,0,4,0,0
+Suelo expuesto,0,0,0,0,2,2
+Urbano,0,0,0,0,0,4

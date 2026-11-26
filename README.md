@@ -68,15 +68,21 @@ El `class_id` será el valor de cada píxel en el GeoTIFF temático de la Fase 3
 
 ## 4. Polígonos de entrenamiento
 
-[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **72 polígonos, 12 por clase**, con los campos `class_id`, `class_name` y `poly_id`.
+[`data/training_polygons.gpkg`](data/training_polygons.gpkg) contiene **88 polígonos**: 12 de vegetación densa y baja, 18 de agua, 12 de relave, 17 de suelo y 17 de urbano, con los campos `class_id`, `class_name`, `poly_id` y `source`.
 
-Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se revisan visualmente en QGIS. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
+Después de la evaluación inicial de la Fase 2 se retiraron `5_03` y `5_11`: eran los dos polígonos de prueba de suelo que la SVM fallaba y, al revisarlos, se consideraron ambiguos. Se añadieron candidatos espectrales: `3_13`–`3_18` (agua), `5_13`–`5_19` (suelo) y `6_13`, `6_15`, `6_16`, `6_17`, `6_20` (urbano).
+
+El campo `source` indica el estado de revisión: `borrador` para los 72 originales (sin revisión individual), `revisado` para los candidatos de agua y urbano y `candidato` para los de suelo (sin revisión individual).
+
+Cinco candidatos quedaron por debajo de la separación mínima respecto a polígonos de prueba: `3_13`, `3_15` y `3_17` a 10 m de `3_02`, `3_06` y `3_08`; `5_16` a 40 m de `5_05`, y `6_17` a 60 m de `6_01`. Entrenar sin ellos da la misma OA en LR y SVM, así que no inflan el resultado.
+
+Los polígonos se propusieron con reglas de índices espectrales (NDVI, NDWI, MNDWI, NDBI, BSI y el ΔNDVI del midterm) y se inspeccionaron en conjunto en QGIS; la revisión individual de cada polígono está pendiente. Las reglas exactas de cada clase están en el reporte, sección *Polígonos de entrenamiento*.
 
 Para editarlos, abre el proyecto de QGIS (sección 6), activa la edición de la capa *Polígonos de entrenamiento*, haz los cambios y guarda. Después vuelve a correr los scripts (sección 7).
 
 ## 5. El dataset: `data/training_dataset.tsv`
 
-Es una tabla separada por **tabulaciones**, con una fila por píxel: **1416 filas** y 17 columnas.
+Es una tabla separada por **tabulaciones**, con una fila por píxel: **1640 filas** y 17 columnas.
 
 ```
 Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  class_name  poly_id
@@ -86,11 +92,15 @@ Latitude  Longitude  B01 B02 B03 B04 B05 B06 B07 B08 B8A B09 B11 B12  class_id  
 |---|---|---|
 | Vegetación densa | 12 | 300 |
 | Vegetación baja | 12 | 300 |
-| Agua | 12 | 108 |
+| Agua | 18 | 162 |
 | Relave minero | 12 | 300 |
-| Suelo expuesto | 12 | 300 |
-| Urbano | 12 | 108 |
-| **Total** | **72** | **1416** |
+| Suelo expuesto | 17 | 425 |
+| Urbano | 17 | 153 |
+| **Total** | **88** | **1640** |
+
+### Dataset auxiliar por polígono
+
+`data/training_polygons.tsv` es un derivado con **una fila por polígono**: mediana e IQR de cada banda, número de píxeles y los índices NDVI, NDWI, MNDWI, NDBI y BSI. Se usa para el experimento por polígono de la Fase 2; el entregable de la Fase 1 sigue siendo el TSV por píxel.
 
 Para leerlo en Python:
 
@@ -117,45 +127,49 @@ Las rutas son relativas: funciona en cualquier computador siempre que se manteng
 
 ## 7. Código
 
-No hay que instalar nada. Los scripts usan el **Python que trae QGIS**, que incluye GDAL, geopandas, pandas y matplotlib. [`run.bat`](run.bat) lo activa. Si tu QGIS está en otra ruta o versión, edita la línea `call ...o4w_env.bat`.
-
-Desde la carpeta del repositorio:
-
-```bat
-run.bat src\01_extract_tsv.py
-run.bat src\02_figures.py
-```
-
-| Script | Qué hace | Entradas | Salidas |
-|---|---|---|---|
-| `src/common.py` | Rutas, bandas, clases y colores compartidos | — | — |
-| `src/01_extract_tsv.py` | Toma cada píxel cuyo centro cae dentro de un polígono, descarta los inválidos según la SCL, convierte las coordenadas a lat/lon y escribe el TSV | stack, SCL, polígonos | `data/training_dataset.tsv` |
-| `src/02_figures.py` | Mapas, firmas espectrales y tablas LaTeX del reporte | stack, SCL, polígonos, TSV, metadatos | `report/figures/`, `report/tables/` |
-
-Si cambian los polígonos, corran los scripts en orden (01 → 02 → 03 → 04) y luego actualicen los reportes.
-
-### Fase 2: entorno de machine learning
-
-El Python de QGIS no trae scikit-learn, así que los modelos usan un entorno aparte (`.venv`). Se crea una sola vez, con Python 3.10 o superior:
+Todo el pipeline usa un **único entorno de Python 3.10+** y no requiere QGIS para ejecutarse. Se crea una sola vez:
 
 ```bat
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 ```
 
-Después, desde la carpeta del repositorio:
+[`run.bat`](run.bat) usa ese entorno (o el `python` del sistema si `.venv` no existe). Desde la carpeta del repositorio:
 
 ```bat
-run_ml.bat src\03_train_models.py
-run.bat    src\04_phase2_figures.py
+run.bat src\01_extract_tsv.py
+run.bat src\01b_polygon_dataset.py
+run.bat src\02_figures.py
 ```
 
-`run_ml.bat` usa el entorno `.venv` y `run.bat` usa el Python de QGIS. El script 04 necesita GDAL y geopandas para el mapa.
+| Script | Qué hace | Entradas | Salidas |
+|---|---|---|---|
+| `src/common.py` | Rutas, bandas, clases, colores e índices compartidos | — | — |
+| `src/01_extract_tsv.py` | Toma cada píxel cuyo centro cae dentro de un polígono, descarta los inválidos según la SCL, convierte las coordenadas a lat/lon y escribe el TSV | stack, SCL, polígonos | `data/training_dataset.tsv`, `results/polygon_sampling.json` |
+| `src/01b_polygon_dataset.py` | Agrega cada polígono (mediana, IQR, índices) y hace control de calidad | TSV de píxeles, polígonos, muestreo | `data/training_polygons.tsv`, `results/polygon_qc.json` |
+| `src/02_figures.py` | Mapas, firmas espectrales y tablas LaTeX del reporte | stack, SCL, polígonos, TSV, metadatos | `report/figures/`, `report/tables/` |
+
+Si cambian los polígonos, corran los scripts en orden (01 → 01b → 02 → 03 → 04 → 04b) y luego actualicen los reportes.
+
+### Fase 2: entrenamiento
+
+El mismo entorno `.venv` incluye scikit-learn. Desde la carpeta del repositorio:
+
+```bat
+run.bat src\03_train_models.py
+run.bat src\04_phase2_figures.py
+run.bat src\04b_expansion_comparison.py
+```
+
+[`run_ml.bat`](run_ml.bat) se conserva como alias de `run.bat`.
+
+El script `04b` usa `data/baseline_72/`, una copia congelada de la versión anterior a la ampliación extraída del commit `845f00d`. No se usa para entrenar el modelo final: sirve para regenerar `expansion_comparison.csv`, `expansion_per_class.csv` y la tabla pareada de `report_fase2` y `report_completo`.
 
 | Script | Qué hace | Salidas |
 |---|---|---|
-| `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42), estandariza las bandas, entrena LR, DT, RF, SVM, ANN y KNN, y calcula la matriz de confusión, OA, Kappa, precisión, recall, F1 y una validación cruzada agrupada por polígono | `results/` |
+| `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42). Pista A: entrena con los píxeles y evalúa por píxel y por polígono. Pista B: entrena con la mediana por polígono más índices. Reporta LOO por polígono, IC bootstrap e ICC | `results/` |
 | `src/04_phase2_figures.py` | Matrices de confusión, gráfica de métricas, importancia de bandas, mapa de la división y tablas LaTeX | `report_fase2/figures/`, `report_fase2/tables/` |
+| `src/04b_expansion_comparison.py` | Regenera la comparación entre 72 y 88 polígonos: CSV de modelos, CSV por clase y tabla pareada. Excluye de entrenamiento los polígonos que evalúa | `results/expansion_comparison.csv`, `results/expansion_per_class.csv`, `results/expansion_paired.csv`, tablas de ambos reportes |
 
 Archivos en `results/`:
 
@@ -165,23 +179,62 @@ Archivos en `results/`:
 | `metrics_summary.csv` | Una fila por modelo: OA, Kappa, métricas macro, validación cruzada y parámetros |
 | `confusion_<modelo>.csv` | Matriz de confusión (filas: clase real; columnas: predicha) |
 | `per_class_<modelo>.csv` | Precisión, recall y F1 por clase |
-| `feature_importance.csv` | Importancia de las bandas en DT y RF |
+| `feature_importance.csv` | Importancia de las bandas en DT y RF (pista A) |
 | `tsv_quality.json` | Control de calidad del TSV |
+| `polygon_sampling.json` | Píxeles candidatos, conservados y descartados por polígono |
+| `polygon_qc.json` | Control de calidad del dataset auxiliar y de las geometrías |
+| `metrics_polygon.csv` | Pista A evaluada por polígono (voto mayoritario y pureza) |
+| `metrics_polytrain.csv` | Pista B (mediana por polígono) |
+| `pixel_vs_polygon.csv` | Comparación directa de las tres evaluaciones |
+| `bootstrap_ci.csv` | IC bootstrap al 95 % de OA, Kappa y F1 |
+| `cv_folds.csv` | OA de cada pliegue LeaveOneGroupOut |
+| `icc.csv` | ICC por banda y tamaño efectivo de muestra |
+| `confusion_polygon_<modelo>.csv` | Matriz de la pista A por polígono |
+| `confusion_polytrain_<modelo>.csv` | Matriz de la pista B |
+| `per_class_polygon_<modelo>.csv` | Métricas por clase de la pista A por polígono |
+| `per_class_polytrain_<modelo>.csv` | Métricas por clase de la pista B |
+| `feature_importance_polytrain.csv` | Importancia de bandas e índices en DT y RF (pista B) |
+| `expansion_comparison.csv` | OA, Kappa y F1 antes/después de la ampliación para los seis modelos |
+| `expansion_per_class.csv` | Recall y F1 antes/después por clase para SVM y ANN |
+| `expansion_paired.csv` | Comparación pareada sobre el test original, el actual y los 22 polígonos comunes |
 
 ### Resultados iniciales (Fase 2)
 
-Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles):
+**Resultado de referencia: prueba original.** Sobre los 24 polígonos de prueba definidos antes de la ampliación (incluye `5_03` y `5_11`), LR y SVM entrenadas con los 88 polígonos alcanzan una OA de **0,894**. Con el entrenamiento de 72 polígonos, LR tenía 0,883 y SVM 0,894: la ampliación apenas cambia el desempeño.
 
-| Modelo | OA | Kappa | F1 macro | OA validación cruzada |
+Métricas sobre la **prueba actual** (24 polígonos, 472 píxeles), sin `5_03` ni `5_11`. Como esos dos polígonos se retiraron después de ver que la SVM los fallaba, estas cifras pueden estar sesgadas a favor de los modelos. La OA de validación cruzada es *out-of-fold* con `LeaveOneGroupOut`; el ± es el error estándar de la OA por pliegue.
+
+| Modelo | OA | Kappa | F1 macro | OA LOO |
 |---|---|---|---|---|
-| LR (línea base) | 0,883 | 0,857 | 0,868 | 0,891 ± 0,062 |
-| DT | 0,788 | 0,741 | 0,792 | 0,803 ± 0,066 |
-| RF (bonus) | 0,835 | 0,797 | 0,827 | 0,873 ± 0,047 |
-| **SVM** | **0,894** | **0,870** | **0,883** | 0,906 ± 0,054 |
-| ANN | 0,871 | 0,841 | 0,878 | **0,916 ± 0,052** |
-| KNN | 0,828 | 0,789 | 0,828 | 0,888 ± 0,060 |
+| **LR (línea base)** | **0,947** | **0,935** | **0,933** | 0,940 ± 0,022 |
+| DT | 0,867 | 0,837 | 0,863 | 0,844 ± 0,032 |
+| RF (bonus) | 0,909 | 0,888 | 0,903 | 0,916 ± 0,025 |
+| SVM | **0,947** | **0,935** | **0,933** | **0,945 ± 0,020** |
+| ANN | 0,898 | 0,875 | 0,895 | 0,930 ± 0,023 |
+| KNN | 0,892 | 0,868 | 0,890 | 0,929 ± 0,023 |
 
-Vegetación y agua se clasifican sin errores. La confusión está entre suelo expuesto, relave y urbano: los polígonos de prueba `5_03` y `5_11` se clasifican completos como urbano y como relave, respectivamente.
+LR y SVM empatan en la mejor OA/Kappa/F1 de prueba; SVM tiene la mejor OA LOO.
+
+Al agregar las predicciones por polígono (pista A) y al entrenar con medianas (pista B):
+
+| Modelo | A: OA polígono | A: Kappa | A: pureza | B: OA polígono | B: Kappa |
+|---|---|---|---|---|---|
+| **LR** | **0,958** | **0,950** | **1,000** | **0,958** | **0,950** |
+| DT | 0,917 | 0,900 | 0,972 | 0,917 | 0,900 |
+| RF | 0,917 | 0,900 | 0,988 | **0,958** | **0,950** |
+| SVM | **0,958** | **0,950** | **1,000** | 0,917 | 0,900 |
+| ANN | 0,917 | 0,900 | 0,990 | 0,917 | 0,900 |
+| KNN | 0,917 | 0,900 | 0,998 | 0,875 | 0,850 |
+
+En la pista B, LR y RF empatan en 0,958/0,950. La importancia de NDVI, NDWI y MNDWI en la pista B está inflada por construcción: son los mismos índices con los que se propusieron las etiquetas.
+
+El ICC por banda (0,932–0,995) indica que los 1640 píxeles equivalen a unas 88–94 muestras independientes. Las diferencias entre modelos son de uno o dos polígonos sobre 24, así que no son concluyentes; por eso se reportan IC bootstrap.
+
+**Diseño de la evaluación:** los polígonos nuevos se usan **solo para entrenamiento**; la prueba son 24 polígonos originales. Para vegetación, agua, relave y urbano el conjunto de prueba es el mismo que en la versión de 72 polígonos. En suelo cambió: pasó de `5_03`, `5_05`, `5_10` y `5_11` a `5_04`, `5_05`, `5_06` y `5_09`.
+
+La diferencia entre 0,894 (prueba original) y 0,947 (prueba actual) se debe sobre todo a la composición de la prueba de suelo, no a los datos nuevos: no es una mejora demostrada de los modelos.
+
+En la prueba actual, vegetación, agua y relave se clasifican sin errores en LR y SVM; el polígono de suelo `5_06` se clasifica completo como urbano (25 píxeles), por lo que la precisión urbana es 0,59. La ANN también falla en suelo y baja el recall de relave a 0,77. Los antiguos `5_03` y `5_11` ya no están en el dataset.
 
 ## 8. Reportes (LaTeX)
 
@@ -201,9 +254,9 @@ Para compilar cualquiera de los dos en Overleaf:
 ```
 .
 ├── README.md
-├── run.bat                        # ejecuta scripts con el Python de QGIS
-├── run_ml.bat                     # ejecuta scripts con el entorno .venv (scikit-learn)
-├── requirements.txt               # dependencias del entorno de machine learning
+├── run.bat                        # ejecuta scripts con el entorno .venv (o python)
+├── run_ml.bat                     # alias de run.bat
+├── requirements.txt               # dependencias del entorno único
 ├── data/
 │   ├── raw/
 │   │   ├── S2_20190201_stack.tif  # imagen de 12 bandas, 10 m, EPSG:32723
@@ -211,16 +264,20 @@ Para compilar cualquiera de los dos en Overleaf:
 │   │   └── metadata.json          # metadatos de la escena
 │   ├── study_area.gpkg            # rectángulo del área de estudio
 │   ├── ROI_Brumadinho.gpkg        # corredor del relave (midterm)
-│   ├── training_polygons.gpkg     # 72 polígonos de entrenamiento
-│   └── training_dataset.tsv       # dataset de entrenamiento
+│   ├── training_polygons.gpkg     # 88 polígonos de entrenamiento
+│   ├── training_dataset.tsv       # dataset de entrenamiento (fila = píxel)
+│   ├── training_polygons.tsv      # dataset auxiliar (fila = polígono)
+│   └── baseline_72/               # copia congelada de la versión de 72 polígonos
 ├── qgis/
 │   └── ProyectoFinal.qgz          # proyecto de QGIS con todas las capas
 ├── src/
 │   ├── common.py
 │   ├── 01_extract_tsv.py
+│   ├── 01b_polygon_dataset.py
 │   ├── 02_figures.py
 │   ├── 03_train_models.py         # Fase 2: entrenamiento y métricas
-│   └── 04_phase2_figures.py       # Fase 2: figuras y tablas
+│   ├── 04_phase2_figures.py       # Fase 2: figuras y tablas
+│   └── 04b_expansion_comparison.py # Fase 2: comparación 72 vs 88
 ├── results/                       # métricas y matrices de confusión (CSV)
 ├── report/                        # reporte de la Fase 1
 ├── report_fase2/                  # reporte de la Fase 2

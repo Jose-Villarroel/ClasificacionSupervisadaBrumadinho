@@ -11,13 +11,12 @@ Uso:  run.bat src\\01_extract_tsv.py
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from osgeo import gdal, ogr, osr
+import rasterio
 from pyproj import Transformer
+from rasterio.features import rasterize
 
-from common import (BANDS, POLYGONS, SCL, SCL_INVALID, STACK,
+from common import (BANDS, POLYGONS, RESULTS, SCL, SCL_INVALID, STACK,
                     TARGET_EPSG, TSV)
-
-gdal.UseExceptions()
 
 
 def main():
@@ -26,35 +25,42 @@ def main():
     polys = gpd.read_file(src).to_crs(TARGET_EPSG).reset_index(drop=True)
     polys = polys[polys.geometry.notna() & ~polys.geometry.is_empty]
 
-    ds = gdal.Open(str(STACK))
-    gt, w, h = ds.GetGeoTransform(), ds.RasterXSize, ds.RasterYSize
-    stack = ds.ReadAsArray()                      # (12, h, w) uint16
-    scl = gdal.Open(str(SCL)).ReadAsArray()
+    with rasterio.open(STACK) as ds:
+        transform, w, h = ds.transform, ds.width, ds.height
+        stack = ds.read()                          # (12, h, w) uint16
+    with rasterio.open(SCL) as ds:
+        scl = ds.read(1)
 
     # Rasterizar el índice de cada polígono (1..n); píxel incluido si su
-    # centro cae dentro del polígono (ALL_TOUCHED=FALSE).
-    srs = osr.SpatialReference(); srs.ImportFromEPSG(TARGET_EPSG)
-    mem = gdal.GetDriverByName("MEM").Create("", w, h, 1, gdal.GDT_Int32)
-    mem.SetGeoTransform(gt); mem.SetProjection(srs.ExportToWkt())
-    vds = ogr.GetDriverByName("MEM").CreateDataSource("")
-    lyr = vds.CreateLayer("p", srs, ogr.wkbPolygon)
-    lyr.CreateField(ogr.FieldDefn("idx", ogr.OFTInteger))
-    for i, g in enumerate(polys.geometry, start=1):
-        f = ogr.Feature(lyr.GetLayerDefn())
-        f.SetField("idx", i)
-        f.SetGeometry(ogr.CreateGeometryFromWkb(g.wkb))
-        lyr.CreateFeature(f)
-    gdal.RasterizeLayer(mem, [1], lyr, options=["ATTRIBUTE=idx", "ALL_TOUCHED=FALSE"])
-    idx = mem.ReadAsArray()
+    # centro cae dentro del polígono (all_touched=False).
+    idx = rasterize(
+        ((geom, i) for i, geom in enumerate(polys.geometry, start=1)),
+        out_shape=(h, w), transform=transform, fill=0, dtype="int32",
+        all_touched=False,
+    )
 
-    rows, cols = np.nonzero(idx)
-    keep = ~np.isin(scl[rows, cols], SCL_INVALID) & (stack[:, rows, cols] > 0).all(0)
+    rows_all, cols_all = np.nonzero(idx)
+    keep = (~np.isin(scl[rows_all, cols_all], SCL_INVALID)
+            & (stack[:, rows_all, cols_all] > 0).all(0))
     dropped = int((~keep).sum())
-    rows, cols = rows[keep], cols[keep]
+    rows, cols = rows_all[keep], cols_all[keep]
     pid = idx[rows, cols] - 1
 
-    x = gt[0] + gt[1] * (cols + 0.5)
-    y = gt[3] + gt[5] * (rows + 0.5)
+    # Conteo de píxeles candidatos, conservados y descartados por polígono.
+    pid_all = idx[rows_all, cols_all] - 1
+    sampling = pd.DataFrame({"poly_id": polys["poly_id"].to_numpy()[pid_all],
+                             "kept": keep.astype(int)})
+    counts = (sampling.groupby("poly_id")
+              .agg(n_candidates=("kept", "size"), n_kept=("kept", "sum"))
+              .reindex(polys["poly_id"].to_numpy(), fill_value=0))
+    counts["n_dropped"] = counts["n_candidates"] - counts["n_kept"]
+    counts = counts.astype(int).sort_index().reset_index()
+    RESULTS.mkdir(exist_ok=True)
+    (RESULTS / "polygon_sampling.json").write_text(
+        counts.to_json(orient="records", indent=2), encoding="utf-8")
+
+    x = transform.c + transform.a * (cols + 0.5) + transform.b * (rows + 0.5)
+    y = transform.f + transform.d * (cols + 0.5) + transform.e * (rows + 0.5)
     lon, lat = Transformer.from_crs(TARGET_EPSG, 4326, always_xy=True).transform(x, y)
 
     df = pd.DataFrame({"Latitude": np.round(lat, 7), "Longitude": np.round(lon, 7)})
@@ -69,6 +75,7 @@ def main():
 
     print(f"TSV: {TSV}  filas={len(df)}  columnas={df.shape[1]}  "
           f"píxeles descartados (SCL/nodata)={dropped}")
+    print(f"Muestreo por polígono: {RESULTS / 'polygon_sampling.json'}")
     print(df.groupby(["class_id", "class_name"]).agg(
         poligonos=("poly_id", "nunique"), pixeles=("poly_id", "size")))
 

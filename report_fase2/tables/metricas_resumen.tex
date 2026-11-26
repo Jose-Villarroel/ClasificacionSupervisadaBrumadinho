@@ -2,18 +2,18 @@
  \centering
  \small
 \setlength{\tabcolsep}{4pt}
- \caption{Métricas iniciales sobre el conjunto de prueba (24 polígonos) y exactitud global de la validación cruzada agrupada por polígono. En negrita, el mejor valor.}
+ \caption{Métricas sobre el conjunto de prueba (24 polígonos, 472 píxeles) y OA LOO out-of-fold $\pm$ error estándar de la OA por pliegue. En negrita, el mejor valor.}
  \label{tab:metricas}
  \begin{tabular}{llcccccc}
   \toprule
-   & Modelo & OA & Kappa & Precisión & Recall & F1 & OA VC \\
+   & Modelo & OA & Kappa & Precisión & Recall & F1 & OA LOO \\
   \midrule
-  LR & Regresión logística & 0{,}883 & 0{,}857 & 0{,}884 & 0{,}894 & 0{,}868 & 0{,}891 $\pm$ 0{,}062 \\
-  DT & Árbol de decisión & 0{,}788 & 0{,}741 & 0{,}784 & 0{,}819 & 0{,}792 & 0{,}803 $\pm$ 0{,}066 \\
-  RF & Random Forest & 0{,}835 & 0{,}797 & 0{,}821 & 0{,}849 & 0{,}827 & 0{,}873 $\pm$ 0{,}047 \\
-  SVM & Máquina de soporte vectorial & \textbf{0{,}894} & \textbf{0{,}870} & \textbf{0{,}898} & \textbf{0{,}917} & \textbf{0{,}883} & 0{,}906 $\pm$ 0{,}054 \\
-  ANN & Red neuronal (MLP) & 0{,}871 & 0{,}841 & 0{,}868 & 0{,}898 & 0{,}878 & 0{,}916 $\pm$ 0{,}052 \\
-  KNN & K vecinos más cercanos & 0{,}828 & 0{,}789 & 0{,}820 & 0{,}850 & 0{,}828 & 0{,}888 $\pm$ 0{,}060 \\
+  LR & Regresión logística & \textbf{0{,}947} & \textbf{0{,}935} & \textbf{0{,}932} & \textbf{0{,}958} & \textbf{0{,}933} & 0{,}940 $\pm$ 0{,}022 \\
+  DT & Árbol de decisión & 0{,}867 & 0{,}837 & 0{,}867 & 0{,}889 & 0{,}863 & 0{,}844 $\pm$ 0{,}032 \\
+  RF & Random Forest & 0{,}909 & 0{,}888 & 0{,}899 & 0{,}928 & 0{,}903 & 0{,}916 $\pm$ 0{,}025 \\
+  SVM & Máquina de soporte vectorial & \textbf{0{,}947} & \textbf{0{,}935} & \textbf{0{,}932} & \textbf{0{,}958} & \textbf{0{,}933} & 0{,}945 $\pm$ 0{,}020 \\
+  ANN & Red neuronal (MLP) & 0{,}898 & 0{,}875 & 0{,}893 & 0{,}920 & 0{,}895 & 0{,}930 $\pm$ 0{,}023 \\
+  KNN & K vecinos más cercanos & 0{,}892 & 0{,}868 & 0{,}889 & 0{,}915 & 0{,}890 & 0{,}929 $\pm$ 0{,}023 \\
   \bottomrule
  \end{tabular}
 \end{table}
