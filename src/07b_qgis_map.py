@@ -14,6 +14,7 @@ from qgis.core import (Qgis, QgsApplication, QgsCoordinateReferenceSystem,
                        QgsLayoutItemScaleBar, QgsLayoutPoint, QgsLayoutSize,
                        QgsLegendStyle, QgsPrintLayout, QgsProject,
                        QgsRasterLayer, QgsUnitTypes, QgsVectorLayer)
+from qgis.PyQt.QtCore import QSize
 from qgis.PyQt.QtGui import QFont
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,14 +121,11 @@ def main():
     project.write(str(PROJECT))
 
     exporter = QgsLayoutExporter(layout)
-    temp_png = OUT_PNG.with_name(f"{OUT_PNG.stem}_tmp.png")
-    temp_png.unlink(missing_ok=True)
-    image_settings = QgsLayoutExporter.ImageExportSettings()
-    image_settings.dpi = 300
-    result = exporter.exportToImage(str(temp_png), image_settings)
-    if result != QgsLayoutExporter.Success:
-        raise RuntimeError(f"Error exportando PNG: {result}")
-    temp_png.replace(OUT_PNG)
+    image = exporter.renderPageToImage(0, QSize(), 300)
+    if image.isNull():
+        raise RuntimeError("No se pudo renderizar el PNG del layout")
+    if not image.save(str(OUT_PNG), "PNG"):
+        raise RuntimeError(f"No se pudo guardar {OUT_PNG}")
 
     pdf_settings = QgsLayoutExporter.PdfExportSettings()
     pdf_settings.dpi = 300

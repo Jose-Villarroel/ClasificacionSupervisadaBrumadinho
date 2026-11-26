@@ -16,27 +16,29 @@
 \addbibresource{references.bib}
 
 \title{Clasificación supervisada de coberturas tras el colapso de la presa de Brumadinho (Minas Gerais, Brasil) con Sentinel-2\\[0.5em]
-\large Proyecto final -- Fases 1 y 2: definición del problema, preprocesamiento y entrenamiento}
+\large Proyecto final -- Fases 1, 2 y 3: definición del problema, entrenamiento y predicción}
 \author{Jose Villarroel, Jose D. Medina, Camila Beltrán y Juan Rodríguez\\Pontificia Universidad Javeriana}
 \date{\today}
 
 \begin{document}
+\setlength{\emergencystretch}{3em}
 
 \maketitle
 
 \begin{abstract}
-Este documento reúne las dos primeras fases de un análisis comparativo de arquitecturas de aprendizaje automático para la clasificación de coberturas terrestres con imágenes satelitales. En la primera fase se define el evento de estudio, el colapso de la presa I de la mina Córrego do Feijão el 25 de enero de 2019, y se delimita un área de 74{,}2\,km$^2$ en Brumadinho (Brasil). Se describe la escena Sentinel-2 L2A del 1 de febrero de 2019, de la que se usan las doce bandas espectrales remuestreadas a 10\,m, y se construye el conjunto de entrenamiento: 88 polígonos en seis clases de cobertura, de los que se extraen 1640 píxeles en un archivo TSV. En la segunda fase se documenta y preprocesa ese archivo y se entrenan cinco modelos con parámetros iniciales, más Random Forest: regresión logística, árbol de decisión, máquina de soporte vectorial, red neuronal y K vecinos más cercanos. La evaluación combina la vista por píxel y la vista por polígono; los polígonos añadidos se usan solo para entrenamiento y la prueba actual son 24 polígonos originales. Sobre la prueba original, definida antes de la ampliación, la regresión logística y la SVM alcanzan una exactitud global de 89{,}4\,\%; es el resultado de referencia de esta fase. Dos polígonos de suelo que los modelos fallaban se retiraron después de esa evaluación; en la prueba actual, sin ellos, ambos modelos llegan a 94{,}7\,\% (Kappa 0{,}935), pero esa cifra puede estar sesgada a favor de los modelos y no demuestra una mejora. Los errores se concentran en suelo expuesto y urbano.
+Este documento reúne las tres fases de un análisis comparativo de arquitecturas de aprendizaje automático para la clasificación de coberturas terrestres con imágenes satelitales. En la primera fase se define el evento de estudio, el colapso de la presa I de la mina Córrego do Feijão el 25 de enero de 2019, y se delimita un área de 74{,}2\,km$^2$ en Brumadinho (Brasil). Se describe la escena Sentinel-2 L2A del 1 de febrero de 2019, de la que se usan las doce bandas espectrales remuestreadas a 10\,m, y se construye el conjunto de entrenamiento: 88 polígonos en seis clases de cobertura, de los que se extraen 1640 píxeles en un archivo TSV. En la segunda fase se documenta y preprocesa ese archivo y se entrenan cinco modelos con parámetros iniciales, más Random Forest: regresión logística, árbol de decisión, máquina de soporte vectorial, red neuronal y K vecinos más cercanos. La evaluación combina la vista por píxel y la vista por polígono; los polígonos añadidos se usan solo para entrenamiento y la prueba actual son 24 polígonos originales. Sobre la prueba original, definida antes de la ampliación, la regresión logística y la SVM alcanzan una exactitud global de 89{,}4\,\%; es el resultado de referencia de esta fase. Dos polígonos de suelo que los modelos fallaban se retiraron después de esa evaluación; en la prueba actual, sin ellos, ambos modelos llegan a 94{,}7\,\% (Kappa 0{,}935), pero esa cifra puede estar sesgada a favor de los modelos y no demuestra una mejora. Los errores se concentran en suelo expuesto y urbano. La Fase~3 optimiza los hiperparámetros con validación agrupada por polígono y mantiene el test congelado. La regresión logística con $C=1$ y pesos balanceados conserva 94{,}7\,\% de exactitud y 0{,}935 de Kappa. El modelo se aplica al ráster completo: el GeoTIFF temático cubre 74{,}10\,km$^2$ válidos y estima 4{,}65\,km$^2$ de relave, de los cuales 2{,}85\,km$^2$ quedan dentro del corredor. El mapa es una estimación basada en pseudo-etiquetas, no un inventario oficial.
 \end{abstract}
 
 \section{Introducción}
 El proyecto final compara cinco arquitecturas de aprendizaje automático para clasificar las coberturas terrestres de una escena satelital multiespectral: regresión logística, árboles de decisión, máquinas de soporte vectorial, redes neuronales artificiales y un quinto modelo (KNN o Naive Bayes). El flujo de trabajo es el de una aplicación de GeoAI. Primero, los píxeles de la imagen se transforman en una tabla. Luego se entrenan y evalúan los modelos sobre esa tabla. Finalmente, el mejor modelo se aplica de nuevo al ráster completo para obtener un mapa temático y el área de cada clase.
 
-Este documento reúne las dos primeras entregas del proyecto:
+Este documento reúne las tres entregas del proyecto:
 \begin{itemize}
  \item \textbf{Fase 1, definición del problema} (Parte~\ref{part:fase1}): el evento elegido, los límites del área de estudio, los metadatos de la imagen satelital y la creación del conjunto de datos de entrenamiento.
  \item \textbf{Fase 2, preprocesamiento y entrenamiento} (Parte~\ref{part:fase2}): la documentación del archivo TSV de entrenamiento y las métricas iniciales de evaluación de los modelos, como mínimo la matriz de confusión y la exactitud global.
+ \item \textbf{Fase 3, optimización y predicción} (Parte~\ref{part:fase3}): la búsqueda de hiperparámetros, la selección del modelo, el GeoTIFF temático y la cuantificación de áreas.
 \end{itemize}
-El procesamiento de la imagen se realizó con scripts de Python basados en \texttt{rasterio} \parencite{GDAL}, sin depender de un sistema de información geográfica; QGIS \parencite{QGIS_Software} se utilizó únicamente para visualizar los resultados y revisar los polígonos. Los modelos se implementaron con scikit-learn \parencite{Pedregosa2011}. La optimización de hiperparámetros, la comparación formal entre arquitecturas y la predicción sobre la imagen completa corresponden a la Fase~3.
+El procesamiento de la imagen se realizó con scripts de Python basados en \texttt{rasterio} \parencite{GDAL}, sin depender de un sistema de información geográfica; QGIS \parencite{QGIS_Software} se utilizó para visualizar los resultados, revisar los polígonos y exportar el mapa final. Los modelos se implementaron con scikit-learn \parencite{Pedregosa2011}. La optimización de hiperparámetros, la comparación formal entre arquitecturas y la predicción sobre la imagen completa se desarrollan en la Fase~3.
 
 \part{Fase 1: definición del problema}
 \label{part:fase1}
@@ -448,7 +450,7 @@ La ampliación del dataset no mejoró de forma demostrable el desempeño. Se ret
 Quedan limitaciones. Las etiquetas son pseudo-etiquetas construidas con reglas espectrales y revisión visual, no verdad de campo. Cinco polígonos añadidos quedaron a 10--60\,m de polígonos de prueba, por debajo de la separación mínima de la Fase~1; aunque se comprobó que no cambian la exactitud, introducen autocorrelación espacial. Los 72 polígonos originales y los candidatos de suelo no tuvieron revisión visual individual. El test tiene solo 24 polígonos y las clases de vegetación y relave siguen con 12 polígonos cada una. Por eso las diferencias de uno o dos polígonos no deben interpretarse como superioridad definitiva.
 
 \section{Reproducibilidad}
-La imagen de doce bandas, la capa SCL y los polígonos de entrenamiento se conservan como insumos del proyecto. A partir de ellos, el conjunto de datos, los modelos, las figuras y las tablas de este documento se generan con cinco scripts de Python sobre un único entorno reproducible descrito en \texttt{requirements.txt}, sin depender de QGIS (Tabla~\ref{tab:scripts}).
+La imagen de doce bandas, la capa SCL y los polígonos de entrenamiento se conservan como insumos del proyecto. A partir de ellos, el conjunto de datos, los modelos, las figuras, las tablas y el GeoTIFF se generan con scripts de Python sobre un único entorno reproducible descrito en \texttt{requirements.txt}. QGIS se usa solo para la simbolización y exportación del mapa final (Tabla~\ref{tab:scripts}).
 
 \begin{table}[htbp]
  \centering
@@ -463,18 +465,117 @@ La imagen de doce bandas, la capa SCL y los polígonos de entrenamiento se conse
   \texttt{02\_figures.py} & 1 & Genera las figuras y tablas de la Fase~1. \\
   \texttt{03\_train\_models.py} & 2 & Divide por polígono, entrena las pistas A y B y calcula las métricas. \\
   \texttt{04\_phase2\_figures.py} & 2 & Genera las figuras y tablas de la Fase~2. \\
+  \texttt{04b\_expansion\_comparison.py} & 2 & Regenera la comparación entre 72 y 88 polígonos. \\
+  \texttt{05\_tune\_models.py} & 3 & HPO agrupado, selección, test y modelo final. \\
+  \texttt{06\_predict\_raster.py} & 3 & Inferencia por bloques, GeoTIFF y áreas. \\
+  \texttt{07\_phase3\_figures.py} & 3 & Figuras y tablas de la Fase~3. \\
+  \texttt{07b\_qgis\_map.py} & 3 & Proyecto QGIS y mapa temático. \\
+  \texttt{08\_validate\_phase3.py} & 3 & Validación del split, modelo, ráster y áreas. \\
   \bottomrule
  \end{tabularx}
 \end{table}
 
-\section{Próximos pasos}
-En la Fase~3 se realizarán las siguientes tareas:
-\begin{itemize}
- \item optimizar los hiperparámetros de cada modelo, por ejemplo $C$ y $\gamma$ en la SVM, la arquitectura de la red neuronal, $k$ en KNN y la profundidad del árbol, mediante búsqueda en malla con validación cruzada agrupada por polígono;
- \item revisar visualmente los polígonos sin revisión individual (los 72 originales y los candidatos de suelo) con un criterio definido de antemano, no según los errores del modelo; añadir polígonos de suelo y urbano más puros, separados de los de prueba, y ampliar vegetación y relave;
- \item comparar los modelos optimizados con Kappa, precisión, recall y F1, y seleccionar el mejor;
- \item aplicar el modelo seleccionado a toda la imagen para obtener el GeoTIFF temático, simbolizarlo en QGIS y calcular el área de cada clase.
-\end{itemize}
+\part{Fase 3: optimización, predicción y análisis}
+\label{part:fase3}
+
+\section{Protocolo de optimización}
+\begin{sloppypar}
+La búsqueda de hiperparámetros usó solo los 64 polígonos de entrenamiento, con \texttt{StratifiedGroupKFold} de cuatro pliegues y semilla 42 \parencite{Roberts2017}. El test de 24 polígonos se mantuvo congelado y se evaluó una sola vez. Se optimizaron los seis modelos de la Fase~2 con 224 combinaciones y se usó el Kappa medio como criterio principal.
+
+Dentro de la familia ganadora se aplicó una regla de una desviación estándar: se consideraron los candidatos con Kappa a menos de un error estándar del mejor y se prefirieron los pesos balanceados y la menor variación entre pliegues. La familia seleccionada fue la regresión logística; el modelo final usa $C=1$ y \texttt{class\_weight=balanced}. El mejor candidato aislado ($C=100$, sin pesos) tenía Kappa de validación más alto pero mayor varianza, por lo que no se eligió.
+\end{sloppypar}
+
+\input{tables/fase3_hpo_resumen.tex}
+
+\input{tables/fase3_params_finales.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.8\textwidth]{figures/fase3_hpo_modelos}
+ \caption{Kappa medio de la mejor configuración de cada familia en la validación agrupada.}
+ \label{fig:fase3_hpo}
+\end{figure}
+
+\section{Evaluación y modelo final}
+La Tabla~\ref{tab:phase3_metricas} resume el test congelado. La regresión logística obtuvo una exactitud global de 0{,}947, un Kappa de 0{,}935 y un F1 macro de 0{,}933. Random Forest quedó en 0{,}917/0{,}899, la ANN en 0{,}911/0{,}891, SVM y KNN en 0{,}890/0{,}865, y el árbol de decisión en 0{,}864/0{,}835. El HPO no produjo una mejora demostrable frente a la Fase~2: la configuración regularizada de LR conserva el resultado de la línea base.
+
+\input{tables/fase3_metricas.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=\textwidth]{figures/fase3_tuned_vs_inicial}
+ \caption{Modelos iniciales de la Fase~2 frente a los modelos optimizados de la Fase~3.}
+ \label{fig:fase3_tuned}
+\end{figure}
+
+La Figura~\ref{fig:fase3_confusion} muestra la matriz de confusión del modelo final. Vegetación densa, vegetación baja, agua y relave se clasifican sin errores en el test; el único error es el polígono de suelo \texttt{5\_06}, cuyos 25 píxeles se asignan a urbano. La Figura~\ref{fig:fase3_importance} presenta la importancia por permutación, dominada por B03, B09 y B02; es una lectura descriptiva, no causal.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.7\textwidth]{figures/fase3_confusion_final}
+ \caption{Matriz de confusión del modelo final sobre los 24 polígonos de prueba.}
+ \label{fig:fase3_confusion}
+\end{figure}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.8\textwidth]{figures/fase3_importancia_final}
+ \caption{Importancia por permutación del modelo final.}
+ \label{fig:fase3_importance}
+\end{figure}
+
+El intervalo bootstrap del 95\,\% para la exactitud global es 0{,}841--1{,}000; para Kappa, 0{,}809--1{,}000. La validación dejando un polígono fuera da una exactitud media de 0{,}946 con error estándar 0{,}024. La amplitud refleja que cada polígono de prueba pesa aproximadamente 5{,}3 puntos porcentuales.
+
+\section{Inferencia y mapa temático}
+El modelo final se reentrenó con los 88 polígonos y se aplicó al stack de doce bandas por bloques de 128 filas. Se enmascararon los píxeles fuera de \texttt{study\_area.gpkg}, los de SCL inválida (0, 1, 3, 8, 9 y 10) y los sin datos. El resultado es un GeoTIFF de una banda \texttt{uint8}, con el mismo CRS, \emph{transform}, ancho y alto que la imagen; 0 representa “sin datos” y 1--6 las clases.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=\textwidth]{figures/fase3_mapa_tematico_qgis}
+ \caption{Mapa temático exportado desde QGIS. El contorno negro delimita el área de estudio y la línea amarilla el corredor del relave.}
+ \label{fig:fase3_mapa}
+\end{figure}
+
+La Figura~\ref{fig:fase3_zoom} muestra el detalle del corredor. La clase relave aparece a lo largo del valle, pero también en zonas mineras fuera de él; esa es una limitación de la separación espectral entre relave y suelo desnudo.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.9\textwidth]{figures/fase3_mapa_zoom_relave}
+ \caption{Detalle del corredor del relave sobre el mapa predicho.}
+ \label{fig:fase3_zoom}
+\end{figure}
+
+\section{Cuantificación de áreas}
+El área válida total es 74{,}100\,km$^2$; los 2{,}166\,km$^2$ restantes son “sin datos” e incluyen el exterior del área de estudio y los píxeles inválidos por SCL. La Tabla~\ref{tab:area_clases} resume las áreas por clase.
+
+\input{tables/fase3_area_clases.tex}
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.85\textwidth]{figures/fase3_area_clases}
+ \caption{Área predicha por clase sobre el área válida.}
+ \label{fig:fase3_area}
+\end{figure}
+
+La vegetación densa ocupa 42{,}19\,km$^2$ (56{,}9\,\%), la vegetación baja 17{,}76\,km$^2$ (24{,}0\,\%), el urbano 7{,}94\,km$^2$ (10{,}7\,\%), el relave 4{,}65\,km$^2$ (6{,}3\,\%), el suelo expuesto 1{,}31\,km$^2$ (1{,}8\,\%) y el agua 0{,}26\,km$^2$ (0{,}4\,\%). El corredor del relave tiene 5{,}38\,km$^2$; el modelo predice 2{,}85\,km$^2$ de relave dentro y 1{,}80\,km$^2$ fuera. El área total de relave no debe interpretarse como la extensión oficial del lodo.
+
+\input{tables/fase3_area_corredor.tex}
+
+\section{Discusión y limitaciones}
+El mapa es coherente con la escena: la vegetación domina, el urbano se concentra en el casco de Brumadinho, el agua aparece en lagunas y cauces, y el relave sigue el valle del Ribeirão Ferro-Carvão. La separación de vegetación, agua y relave es alta en el test. La dificultad está en suelo expuesto y urbano; sus firmas son parecidas y, a 10\,m, un polígono de suelo puede contener lotes, vías o materiales de construcción. El error de \texttt{5\_06} es consistente con esa ambigüedad.
+
+Las limitaciones principales son: las etiquetas son pseudo-etiquetas, no verdad de campo; los 72 polígonos originales y los candidatos de suelo no tuvieron revisión individual; el test tiene solo 24 polígonos y los intervalos bootstrap son amplios; cinco polígonos añadidos quedaron por debajo de la separación mínima de la Fase~1; el mapa usa una sola fecha y una sola escena; y la clase relave se confunde con superficies mineras desnudas fuera del corredor.
+
+\section{Conclusiones y trabajo futuro}
+\begin{enumerate}
+ \item La regresión logística regularizada con pesos balanceados fue el modelo más estable; su test es 0{,}947 de exactitud y 0{,}935 de Kappa.
+ \item El HPO no produjo una mejora demostrable frente a la Fase~2; el valor de la fase está en el protocolo de selección y en la inferencia completa.
+ \item El GeoTIFF conserva la grilla, el CRS y el \emph{transform}, y puede abrirse y simbolizarse en QGIS.
+ \item El área válida es 74{,}10\,km$^2$; el relave predicho es 4{,}65\,km$^2$, de los cuales 2{,}85\,km$^2$ están dentro del corredor.
+ \item La estimación de relave y suelo es la parte más débil; antes de usarla como inventario se necesita verdad de campo y una revisión de etiquetas.
+\end{enumerate}
+
+Como trabajo futuro se propone revisar visualmente los polígonos originales y los candidatos de suelo con un criterio fijado antes de mirar los errores, añadir polígonos más puros y separados de la prueba, incorporar verdad de campo, probar una fecha adicional y explorar un postprocesamiento espacial para separar el relave del corredor de otras superficies mineras.
 
 \printbibliography
 

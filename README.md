@@ -264,7 +264,7 @@ El GeoTIFF final es `data/prediction/landcover_lr.tif`: una banda `uint8`, EPSG:
 
 - [`report/`](report/): documento de la Fase 1.
 - [`report_fase2/`](report_fase2/): documento de la Fase 2.
-- [`report_completo/`](report_completo/): documento único con las Fases 1 y 2.
+- [`report_completo/`](report_completo/): documento unificado con las Fases 1, 2 y 3.
 - [`report_fase3/`](report_fase3/): documento separado de la Fase 3, con HPO, inferencia, mapa y áreas.
 
 Cada carpeta contiene `main.tex`, `references.bib`, las figuras y las tablas generadas.
@@ -315,7 +315,7 @@ Para compilar cualquiera de los reportes en Overleaf:
 ├── results/                       # métricas, matrices y resultados de Fase 3
 ├── report/                        # reporte de la Fase 1
 ├── report_fase2/                  # reporte de la Fase 2
-├── report_completo/               # reporte unificado (Fases 1 y 2)
+├── report_completo/               # reporte unificado (Fases 1, 2 y 3)
 └── report_fase3/                  # reporte separado de la Fase 3
 ```
 
