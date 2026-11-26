@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+ \centering
+ \small
+ \setlength{\tabcolsep}{4pt}
+ \caption{Mejor Kappa de validación agrupada por familia. La columna final marca la familia seleccionada.}
+ \label{tab:hpo}
+ \begin{tabular}{lcccc}
+  \toprule
+  Modelo & Kappa CV & F1 CV & Candidatos & Seleccionado \\
+  \midrule
+  LR & 0{,}938 & 0{,}956 & 10 & Sí \\
+  SVM & 0{,}918 & 0{,}938 & 50 & No \\
+  ANN & 0{,}915 & 0{,}938 & 30 & No \\
+  KNN & 0{,}904 & 0{,}931 & 24 & No \\
+  RF & 0{,}856 & 0{,}895 & 30 & No \\
+  DT & 0{,}791 & 0{,}829 & 80 & No \\
+  \bottomrule
+ \end{tabular}
+\end{table}
