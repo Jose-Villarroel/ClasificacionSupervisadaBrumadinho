@@ -1,0 +1,129 @@
+{
+  "phase": 3,
+  "created_at": "2026-11-25T19:48:44",
+  "selected_model": "LR",
+  "selected_name": "Regresión logística",
+  "selection_rule": "Familia con mayor Kappa CV. Dentro de la familia, candidatos a una desviación estándar del mejor; se prefieren pesos balanceados y la menor desviación entre folds.",
+  "test_best_model": "LR",
+  "test_best_kappa": 0.9350906530540398,
+  "cv": {
+    "family_best_params": {
+      "clf__C": 100.0,
+      "clf__class_weight": null
+    },
+    "params": {
+      "clf__C": 1.0,
+      "clf__class_weight": "balanced"
+    },
+    "family_best_kappa": 0.9381421022756131,
+    "family_best_std": 0.0664409416892683,
+    "kappa": 0.8918809335313826,
+    "kappa_std": 0.043951311141495926,
+    "f1_macro": 0.9258452565356524,
+    "one_se_threshold": 0.8717011605863448,
+    "n_candidates_within_one_se": 9,
+    "rule": "Familia con mayor Kappa CV. Dentro de la familia, candidatos a una desviación estándar del mejor; se prefieren pesos balanceados y la menor desviación entre folds."
+  },
+  "cv_family_best": {
+    "model": "LR",
+    "name": "Regresión logística",
+    "search": "grid",
+    "best_params": "{\"clf__C\": 100.0, \"clf__class_weight\": null}",
+    "best_kappa": 0.9381421022756131,
+    "best_kappa_std": 0.0664409416892683,
+    "best_f1_macro": 0.9559949325640613,
+    "best_f1_macro_std": 0.04490511324950603,
+    "best_balanced_accuracy": 0.9580555555555557,
+    "best_train_kappa": 1.0,
+    "n_candidates": 10,
+    "n_train_polys": 64,
+    "n_train_pixels": 1168,
+    "fit_seconds": 6.142817799933255
+  },
+  "test": {
+    "model": "LR",
+    "name": "Regresión logística",
+    "selected_by_cv": true,
+    "cv_rank": 1,
+    "cv_kappa": 0.8918809335313826,
+    "cv_family_best_kappa": 0.9381421022756131,
+    "oa": 0.9470338983050848,
+    "kappa": 0.9350906530540398,
+    "precision_macro": 0.9316939890710382,
+    "recall_macro": 0.9583333333333334,
+    "f1_macro": 0.933235149729995,
+    "n_test_polys": 24,
+    "n_test_pixels": 472
+  },
+  "bootstrap": {
+    "oa": {
+      "estimate": 0.9470338983050848,
+      "ci_low": 0.8411016949152542,
+      "ci_high": 1.0
+    },
+    "kappa": {
+      "estimate": 0.9350906530540398,
+      "ci_low": 0.808640373637779,
+      "ci_high": 1.0
+    },
+    "f1_macro": {
+      "estimate": 0.933235149729995,
+      "ci_low": 0.8149659863945579,
+      "ci_high": 1.0
+    }
+  },
+  "stability": {
+    "model": "LR",
+    "oa_mean": 0.946388888888889,
+    "oa_se": 0.02431683765932569,
+    "kappa_oof": 0.9121474238435502,
+    "f1_oof": 0.9385155608567596,
+    "n_folds": 64
+  },
+  "params": {
+    "clf__C": 1.0,
+    "clf__class_weight": "balanced"
+  },
+  "features": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B11",
+    "B12"
+  ],
+  "classes": {
+    "1": "Vegetacion densa",
+    "2": "Vegetacion baja",
+    "3": "Agua",
+    "4": "Relave minero",
+    "5": "Suelo expuesto",
+    "6": "Urbano"
+  },
+  "train": {
+    "polygons": 88,
+    "pixels": 1640
+  },
+  "cv_set": {
+    "polygons": 64,
+    "pixels": 1168
+  },
+  "test_set": {
+    "polygons": 24,
+    "pixels": 472
+  },
+  "seed": 42,
+  "python": "3.12.10",
+  "sklearn": "1.9.0",
+  "hashes": {
+    "tsv_sha256": "c6cce5de19b96568a6e887a62bb9c72bb8593df0f120545841dbc8e93c1e348a",
+    "split_sha256": "4c9a35c774dc55e4c0c96c89876f1eec47d6def6eb0efbe5028af720bb7f2314"
+  },
+  "artifact": "models\\final_model.joblib"
+}

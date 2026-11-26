@@ -3,10 +3,12 @@
     "name": "Regresión logística",
     "search": "grid",
     "params": {
-      "clf__C": 100.0,
-      "clf__class_weight": null
+      "clf__C": 1.0,
+      "clf__class_weight": "balanced"
     },
-    "cv_kappa": 0.9381421022756131
+    "cv_kappa": 0.8918809335313826,
+    "cv_family_best_kappa": 0.9381421022756131,
+    "selection_rule": "Familia con mayor Kappa CV. Dentro de la familia, candidatos a una desviación estándar del mejor; se prefieren pesos balanceados y la menor desviación entre folds."
   },
   "DT": {
     "name": "Árbol de decisión",
