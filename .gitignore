@@ -31,6 +31,9 @@ data/predicted/
 outputs/
 .playwright-mcp/
 
+# Paquete de entrega (se regenera)
+entrega_fase3.zip
+
 # Bloqueos temporales de GeoPackage
 *.gpkg-wal
 *.gpkg-shm

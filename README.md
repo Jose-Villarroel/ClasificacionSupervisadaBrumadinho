@@ -9,7 +9,7 @@ El objetivo es comparar cinco modelos de *machine learning* para clasificar las 
 |---|---|---|
 | 1. Definición del problema | Evento, área de estudio, metadatos de la imagen y dataset (TSV) | ✅ Lista |
 | 2. Preprocesamiento y entrenamiento | Documentación del TSV y métricas iniciales: matriz de confusión y exactitud global | ✅ Lista |
-| 3. Síntesis y predicción | GeoTIFF temático, reporte técnico y código (ZIP) | ⏳ Pendiente |
+| 3. Síntesis y predicción | GeoTIFF temático, reporte técnico y código (ZIP) | ✅ Lista |
 
 ---
 
@@ -236,26 +236,52 @@ La diferencia entre 0,894 (prueba original) y 0,947 (prueba actual) se debe sobr
 
 En la prueba actual, vegetación, agua y relave se clasifican sin errores en LR y SVM; el polígono de suelo `5_06` se clasifica completo como urbano (25 píxeles), por lo que la precisión urbana es 0,59. La ANN también falla en suelo y baja el recall de relave a 0,77. Los antiguos `5_03` y `5_11` ya no están en el dataset.
 
-## 8. Reportes (LaTeX)
+## 8. Fase 3: optimización e inferencia
+
+La Fase 3 optimizó los hiperparámetros con validación agrupada por polígono, mantuvo congelado el test de 24 polígonos y aplicó el modelo final a toda la imagen. Se evaluaron 224 combinaciones. La familia seleccionada fue la regresión logística; el modelo final usa `C=1` y `class_weight=balanced`, con una exactitud global de **0,947** y un Kappa de **0,935** en el test.
+
+```bat
+run.bat src\05_tune_models.py
+run.bat src\06_predict_raster.py
+run.bat src\07_phase3_figures.py
+run_qgis.bat src\07b_qgis_map.py
+run.bat src\08_validate_phase3.py
+```
+
+| Script | Qué hace | Salidas |
+|---|---|---|
+| `src/05_tune_models.py` | HPO agrupado, selección por Kappa, evaluación en test, bootstrap y modelo final | `models/`, `results/phase3_*.csv` |
+| `src/06_predict_raster.py` | Inferencia por bloques, máscaras y GeoTIFF temático | `data/prediction/`, `results/phase3_area_*.csv` |
+| `src/07_phase3_figures.py` | Figuras y tablas del reporte | `report_fase3/figures/`, `report_fase3/tables/` |
+| `src/07b_qgis_map.py` | Proyecto QGIS y exportación del mapa | `qgis/ProyectoFinal_Fase3.qgz`, mapa PNG/PDF |
+| `src/08_validate_phase3.py` | Validación de split, modelo, ráster y áreas | `results/phase3_validation.json` |
+
+El GeoTIFF final es `data/prediction/landcover_lr.tif`: una banda `uint8`, EPSG:32723, mismo `transform` que el stack, `0 = sin datos` y `1–6 = clases`. El estilo discreto está en `data/prediction/landcover_lr.qml`.
+
+Área válida: **74,10 km²**. Vegetación densa 42,19 km², vegetación baja 17,76 km², urbano 7,94 km², relave 4,65 km², suelo expuesto 1,31 km² y agua 0,26 km². El relave incluye 2,85 km² dentro del corredor y 1,80 km² fuera; esta clase es la más afectada por la confusión con superficies mineras desnudas.
+
+## 9. Reportes (LaTeX)
 
 - [`report/`](report/): documento de la Fase 1.
 - [`report_fase2/`](report_fase2/): documento de la Fase 2.
-- [`report_completo/`](report_completo/): documento único con las Fases 1 y 2 (copia de las figuras y tablas de ambas carpetas; si se regeneran, hay que copiarlas de nuevo).
+- [`report_completo/`](report_completo/): documento unificado con las Fases 1, 2 y 3.
+- [`report_fase3/`](report_fase3/): documento separado de la Fase 3, con HPO, inferencia, mapa y áreas.
 
 Cada carpeta contiene `main.tex`, `references.bib`, las figuras y las tablas generadas.
 
-Para compilar cualquiera de los dos en Overleaf:
+Para compilar cualquiera de los reportes en Overleaf:
 1. Comprime la carpeta del reporte.
 2. Ve a **New Project → Upload Project** y sube el ZIP.
 3. Compila con pdfLaTeX. Overleaf corre biber automáticamente.
 
-## 9. Estructura del repositorio
+## 10. Estructura del repositorio
 
 ```
 .
 ├── README.md
 ├── run.bat                        # ejecuta scripts con el entorno .venv (o python)
 ├── run_ml.bat                     # alias de run.bat
+├── run_qgis.bat                   # ejecuta scripts con el Python de QGIS
 ├── requirements.txt               # dependencias del entorno único
 ├── data/
 │   ├── raw/
@@ -267,9 +293,12 @@ Para compilar cualquiera de los dos en Overleaf:
 │   ├── training_polygons.gpkg     # 88 polígonos de entrenamiento
 │   ├── training_dataset.tsv       # dataset de entrenamiento (fila = píxel)
 │   ├── training_polygons.tsv      # dataset auxiliar (fila = polígono)
-│   └── baseline_72/               # copia congelada de la versión de 72 polígonos
+│   ├── baseline_72/               # copia congelada de la versión de 72 polígonos
+│   └── prediction/                # GeoTIFF temático y estilo QGIS
+├── models/                        # modelo final y model card
 ├── qgis/
-│   └── ProyectoFinal.qgz          # proyecto de QGIS con todas las capas
+│   ├── ProyectoFinal.qgz          # proyecto de QGIS con las capas de Fase 1-2
+│   └── ProyectoFinal_Fase3.qgz    # proyecto con el mapa predicho
 ├── src/
 │   ├── common.py
 │   ├── 01_extract_tsv.py
@@ -277,18 +306,23 @@ Para compilar cualquiera de los dos en Overleaf:
 │   ├── 02_figures.py
 │   ├── 03_train_models.py         # Fase 2: entrenamiento y métricas
 │   ├── 04_phase2_figures.py       # Fase 2: figuras y tablas
-│   └── 04b_expansion_comparison.py # Fase 2: comparación 72 vs 88
-├── results/                       # métricas y matrices de confusión (CSV)
+│   ├── 04b_expansion_comparison.py # Fase 2: comparación 72 vs 88
+│   ├── 05_tune_models.py          # Fase 3: HPO y modelo final
+│   ├── 06_predict_raster.py       # Fase 3: inferencia y áreas
+│   ├── 07_phase3_figures.py       # Fase 3: figuras y tablas
+│   ├── 07b_qgis_map.py            # Fase 3: mapa QGIS
+│   └── 08_validate_phase3.py      # Fase 3: validación
+├── results/                       # métricas, matrices y resultados de Fase 3
 ├── report/                        # reporte de la Fase 1
 ├── report_fase2/                  # reporte de la Fase 2
-└── report_completo/               # reporte unificado (Fases 1 y 2)
+├── report_completo/               # reporte unificado (Fases 1, 2 y 3)
+└── report_fase3/                  # reporte separado de la Fase 3
 ```
 
-## 10. Próximos pasos
+## 11. Trabajo futuro
 
-- **Fase 3:**
-  - revisar en QGIS los polígonos de suelo expuesto `5_03` y `5_11`;
-  - optimizar los hiperparámetros con validación cruzada agrupada por polígono;
-  - comparar los modelos con Kappa, precisión, recall y F1;
-  - aplicar el mejor modelo a `S2_20190201_stack.tif` y exportar el GeoTIFF temático conservando el CRS y el *transform*;
-  - simbolizarlo en QGIS y calcular el área por clase.
+- Revisar visualmente los polígonos originales y los candidatos de suelo con un criterio fijado antes de mirar los errores del modelo.
+- Añadir polígonos de suelo y urbano más puros, separados de los de prueba, y ampliar vegetación y relave.
+- Incorporar verdad de campo o una interpretación visual independiente para validar las etiquetas.
+- Probar una fecha adicional o una serie temporal para evaluar la persistencia del mapa.
+- Explorar una etapa de postprocesamiento espacial para separar el relave del corredor frente a otras superficies mineras desnudas.

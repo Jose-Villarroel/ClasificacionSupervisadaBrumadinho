@@ -1,0 +1,33 @@
+{
+  "model": "LR",
+  "raster": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\data\\prediction\\landcover_lr.tif",
+  "style": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\data\\prediction\\landcover_lr.qml",
+  "width": 1338,
+  "height": 570,
+  "crs": "EPSG:32723",
+  "transform": [
+    10.0,
+    0.0,
+    581040.0,
+    0.0,
+    -10.0,
+    7776300.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "pixel_area_m2": 100.0,
+  "class_pixels": {
+    "Vegetacion densa": 421852,
+    "Vegetacion baja": 177592,
+    "Agua": 2605,
+    "Relave minero": 46498,
+    "Suelo expuesto": 13065,
+    "Urbano": 79388
+  },
+  "valid_pixels": 741000,
+  "no_data_pixels": 21660,
+  "valid_area_km2": 74.1,
+  "no_data_area_km2": 2.166,
+  "model_card": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\models\\model_card.json"
+}

@@ -1,0 +1,194 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "check": "split_train",
+      "ok": true,
+      "detail": "64 polígonos"
+    },
+    {
+      "check": "split_test",
+      "ok": true,
+      "detail": "24 polígonos"
+    },
+    {
+      "check": "split_disjunto",
+      "ok": true,
+      "detail": "sin solapamiento"
+    },
+    {
+      "check": "modelo_carga",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "modelo_bandas",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "modelo_clases",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "modelo_card",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "modelo_entrenamiento",
+      "ok": true,
+      "detail": "88 polígonos"
+    },
+    {
+      "check": "metricas_filas",
+      "ok": true,
+      "detail": "6 modelos"
+    },
+    {
+      "check": "metricas_final",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "metricas_sin_nan",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "scl_grilla",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "raster_grilla",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "raster_crs",
+      "ok": true,
+      "detail": "EPSG:32723"
+    },
+    {
+      "check": "raster_transform",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "raster_dtype",
+      "ok": true,
+      "detail": "('uint8',)"
+    },
+    {
+      "check": "raster_nodata",
+      "ok": true,
+      "detail": "0.0"
+    },
+    {
+      "check": "raster_fuera_estudio",
+      "ok": true,
+      "detail": "0 píxeles fuera"
+    },
+    {
+      "check": "raster_scl",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "raster_clases",
+      "ok": true,
+      "detail": "[0, 1, 2, 3, 4, 5, 6]"
+    },
+    {
+      "check": "raster_mascara",
+      "ok": true,
+      "detail": "0 discrepancias"
+    },
+    {
+      "check": "raster_validos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "area_filas",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "area_pixeles",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "area_total",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "area_km2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "area_valida",
+      "ok": true,
+      "detail": "74.100 km²"
+    },
+    {
+      "check": "corredor_filas",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "corredor_total",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "existe_landcover_lr.qml",
+      "ok": true,
+      "detail": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\data\\prediction\\landcover_lr.qml"
+    },
+    {
+      "check": "existe_phase3_permutation_importance.csv",
+      "ok": true,
+      "detail": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\results\\phase3_permutation_importance.csv"
+    },
+    {
+      "check": "existe_ProyectoFinal_Fase3.qgz",
+      "ok": true,
+      "detail": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\qgis\\ProyectoFinal_Fase3.qgz"
+    },
+    {
+      "check": "existe_mapa_tematico_qgis.png",
+      "ok": true,
+      "detail": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\report_fase3\\figures\\mapa_tematico_qgis.png"
+    },
+    {
+      "check": "existe_main.pdf",
+      "ok": true,
+      "detail": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\report_fase3\\main.pdf"
+    }
+  ],
+  "model": "LR",
+  "test_metrics": {
+    "model": "LR",
+    "name": "Regresión logística",
+    "selected_by_cv": true,
+    "cv_rank": 1,
+    "cv_kappa": 0.8918809335313826,
+    "cv_family_best_kappa": 0.9381421022756132,
+    "oa": 0.9470338983050848,
+    "kappa": 0.9350906530540398,
+    "precision_macro": 0.9316939890710382,
+    "recall_macro": 0.9583333333333334,
+    "f1_macro": 0.933235149729995,
+    "n_test_polys": 24,
+    "n_test_pixels": 472
+  },
+  "valid_pixels": 741000,
+  "valid_area_km2": 74.1,
+  "raster": "C:\\Users\\juand\\Documents\\octavo semestre\\tecnologias emergentes\\final-project\\ClasificacionSupervisadaBrumadinho\\data\\prediction\\landcover_lr.tif"
+}
