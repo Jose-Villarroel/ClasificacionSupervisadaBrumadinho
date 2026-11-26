@@ -149,7 +149,7 @@ run.bat src\02_figures.py
 | `src/01b_polygon_dataset.py` | Agrega cada polígono (mediana, IQR, índices) y hace control de calidad | TSV de píxeles, polígonos, muestreo | `data/training_polygons.tsv`, `results/polygon_qc.json` |
 | `src/02_figures.py` | Mapas, firmas espectrales y tablas LaTeX del reporte | stack, SCL, polígonos, TSV, metadatos | `report/figures/`, `report/tables/` |
 
-Si cambian los polígonos, corran los scripts en orden (01 → 01b → 02 → 03 → 04) y luego actualicen los reportes.
+Si cambian los polígonos, corran los scripts en orden (01 → 01b → 02 → 03 → 04 → 04b) y luego actualicen los reportes.
 
 ### Fase 2: entrenamiento
 
@@ -158,14 +158,18 @@ El mismo entorno `.venv` incluye scikit-learn. Desde la carpeta del repositorio:
 ```bat
 run.bat src\03_train_models.py
 run.bat src\04_phase2_figures.py
+run.bat src\04b_expansion_comparison.py
 ```
 
 [`run_ml.bat`](run_ml.bat) se conserva como alias de `run.bat`.
+
+El script `04b` usa `data/baseline_72/`, una copia congelada de la versión anterior a la ampliación extraída del commit `845f00d`. No se usa para entrenar el modelo final: sirve para regenerar `expansion_comparison.csv`, `expansion_per_class.csv` y la tabla pareada de `report_fase2` y `report_completo`.
 
 | Script | Qué hace | Salidas |
 |---|---|---|
 | `src/03_train_models.py` | Separa entrenamiento y prueba **por polígono** (8 y 4 por clase, semilla 42). Pista A: entrena con los píxeles y evalúa por píxel y por polígono. Pista B: entrena con la mediana por polígono más índices. Reporta LOO por polígono, IC bootstrap e ICC | `results/` |
 | `src/04_phase2_figures.py` | Matrices de confusión, gráfica de métricas, importancia de bandas, mapa de la división y tablas LaTeX | `report_fase2/figures/`, `report_fase2/tables/` |
+| `src/04b_expansion_comparison.py` | Regenera la comparación entre 72 y 88 polígonos: CSV de modelos, CSV por clase y tabla pareada. Excluye de entrenamiento los polígonos que evalúa | `results/expansion_comparison.csv`, `results/expansion_per_class.csv`, `results/expansion_paired.csv`, tablas de ambos reportes |
 
 Archivos en `results/`:
 
@@ -190,6 +194,9 @@ Archivos en `results/`:
 | `per_class_polygon_<modelo>.csv` | Métricas por clase de la pista A por polígono |
 | `per_class_polytrain_<modelo>.csv` | Métricas por clase de la pista B |
 | `feature_importance_polytrain.csv` | Importancia de bandas e índices en DT y RF (pista B) |
+| `expansion_comparison.csv` | OA, Kappa y F1 antes/después de la ampliación para los seis modelos |
+| `expansion_per_class.csv` | Recall y F1 antes/después por clase para SVM y ANN |
+| `expansion_paired.csv` | Comparación pareada sobre el test original, el actual y los 22 polígonos comunes |
 
 ### Resultados iniciales (Fase 2)
 
@@ -259,7 +266,8 @@ Para compilar cualquiera de los dos en Overleaf:
 │   ├── ROI_Brumadinho.gpkg        # corredor del relave (midterm)
 │   ├── training_polygons.gpkg     # 88 polígonos de entrenamiento
 │   ├── training_dataset.tsv       # dataset de entrenamiento (fila = píxel)
-│   └── training_polygons.tsv      # dataset auxiliar (fila = polígono)
+│   ├── training_polygons.tsv      # dataset auxiliar (fila = polígono)
+│   └── baseline_72/               # copia congelada de la versión de 72 polígonos
 ├── qgis/
 │   └── ProyectoFinal.qgz          # proyecto de QGIS con todas las capas
 ├── src/
@@ -268,7 +276,8 @@ Para compilar cualquiera de los dos en Overleaf:
 │   ├── 01b_polygon_dataset.py
 │   ├── 02_figures.py
 │   ├── 03_train_models.py         # Fase 2: entrenamiento y métricas
-│   └── 04_phase2_figures.py       # Fase 2: figuras y tablas
+│   ├── 04_phase2_figures.py       # Fase 2: figuras y tablas
+│   └── 04b_expansion_comparison.py # Fase 2: comparación 72 vs 88
 ├── results/                       # métricas y matrices de confusión (CSV)
 ├── report/                        # reporte de la Fase 1
 ├── report_fase2/                  # reporte de la Fase 2
